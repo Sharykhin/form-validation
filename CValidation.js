@@ -1,55 +1,164 @@
-var CValidation = function(){
+/**
+ * @author Siarhei Sharykhin
+ * @namespace CValidation
+ * @desc A class checks data of the form and show notification messages
+ * @param locale current language
+ * @constructor
+ */
+var CValidation = function(locale){
+    //Install all neccessary libraries
     this.install();
+    //Set current language. By default language is russian(ru)
+    this.locale = locale || this.setLocale('ru');
 
 }
 
+/**
+ * @memberof CValidation
+ * @method setLocale
+ * @param {string} locale language (For example: 'ru' or 'en' etc...)
+ * @example this.setLocale('ru') or this.setLocale(ru)
+ * @returns {string} language
+ */
+CValidation.prototype.setLocale = function(locale) {
+    if(locale === undefined) {
+        throw "A param locale is required for this method";
+    }
+    //Convert to string, is user forget inset string format
+    this.locale = String(locale);
+    return this.locale;
+};
 
+/**
+ * @memberof CValidation
+ * @method getLocale
+ * @desc return current language (For example: 'ru' or 'en')
+ * @returns {string} current language
+ */
+CValidation.prototype.getLocale = function() {
+    return this.locale;
+};
+
+/**
+ * @memberof CValidation
+ * @method i18n
+ * @desc it returns a message,which has been translated in appropriate language
+ * @param {string} type type of message
+ * @param {object|undefined} params this optional param
+ * @returns {string} message
+ */
+CValidation.prototype.i18n = function(type,params) {
+    return this.createMessage(CValidationI18N[this.locale][type],params);
+};
+
+/**
+ * @memberof CValidation
+ * @desc it returns message with replaced params if they exist
+ * @param {string} msg source message
+ * @param {object|undefined} params parameters which will be replaced in message
+ * @returns {*}
+ */
+CValidation.prototype.createMessage = function(msg,params) {
+    //if params doesn't exist return source message
+    if(params === undefined) {
+        return msg;
+    } else {
+        if(typeof params !=='object') {
+            throw "The params of the method i18n must be an object.For example {a:'a',b:4} ";
+        }
+        for(var i in params) {
+            var regV = /{{/+i+/}}/;
+            regV=regV.replace(/{\//,'{');
+            regV=regV.replace(/\/}/,'}');
+            msg=msg.replace(eval(regV),params[i]);
+        }
+
+        return msg
+
+    }
+}
+
+/**
+ * @memberof CValidation
+ * @desc A method check form on valid data
+ * @param formSelector form selectro
+ * @param ajax is sumbit use ajax request
+ * @returns {boolean}
+ */
 CValidation.prototype.submitForm = function(formSelector,ajax) {
         window.event.preventDefault();
+        /*
+         * if formSelector doesn't exists get selector of form as parent of current submit button
+         */
         var formSelector = formSelector || jQuery(window.event.target).parents('form');
+        //Get All form elements
         var formElements = formSelector.find('input,textarea').not('button[type=submit],input[type=submit]');
+        //Initialize error array
         var errors = [];
+        //Create reference on current class
         var $this = this;
+        //Remove all errors class at elements
         formElements.removeClass('cvalidation-error');
+        //Walk on each element
         formElements.each(function(){
+            //Check if field has neccessary attribute
            if(jQuery(this).attr('data-cvalidation')) {
+               //get array of rules
                var rules = jQuery.trim(jQuery(this).attr('data-cvalidation')).split(" ");
+               //Get field name which will be shown in notification message
+                var fieldName = jQuery(this).attr('data-cvalidation-fieldname') || ((jQuery(this).prev().is('label')) ? jQuery(this).prev().text() : jQuery(this).attr('name'));
+               //Check data for each rule
                for(var i= 0,len=rules.length;i<len;i++){
+                   //Check if users add custom error message
                    if(jQuery(this).attr('data-cvalidation-message')) {
                        var errorMessage = jQuery.trim(jQuery(this).attr('data-cvalidation-message'));
                    }
+                   //if rule of length use validLength method
                    if(rules[i].search(/length/) !== -1) {
-                       $this.validLength(jQuery(this),errors,rules[i],errorMessage);
+                       $this.validLength(jQuery(this),errors,rules[i],errorMessage,fieldName);
                        continue;
                    }
+                   //if rule of equal use validEqual method
                    if(rules[i].search(/equal/) != -1) {
-                       $this.validEqual(jQuery(this),errors,rules[i],errorMessage);
+                       $this.validEqual(jQuery(this),errors,rules[i],errorMessage,fieldName);
                        continue;
                    }
-
-                    $this[rules[i]](jQuery(this),errors,errorMessage);
-
+                    //use appropriate method
+                    $this[rules[i]](jQuery(this),errors,errorMessage,fieldName);
                }
            }
         });
+       //If the errors exist, show notification messages
        if(errors.length > 0) {
            for(var i= 0,len=errors.length;i<len;i++){
                jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error'});
            }
            return false;
        }
-
+        //If all ok submit form, if it doesn't use ajax request
         if(ajax !== true) {
             formSelector.find('input[type=submit],button[type=submit]').off('click');
-            formSelector.find('input[type=submit],button[type=submit]').attr('onclick','return true;').click();
+            if(formSelector.find('input[type=submit],button[type=submit]').attr('onclick').search(/submitForm/) !== -1) {
+                formSelector.find('input[type=submit],button[type=submit]').attr('onclick','return true;').click();
+            }
+        } else {
+            //if form uses ajax reuqest for handle data, so return true
+            return true;
         }
 
 
 
 };
 
-
-CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMessage) {
+/**
+ * @memberof CValidation
+ * @param fieldSelector
+ * @param errors
+ * @param rule
+ * @param errorMessage
+ * @param fieldName
+ */
+CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMessage,fieldName) {
     var valueLength = jQuery.trim(fieldSelector.val()).length;
     if(rule.search(/>?length>?/) !== -1 && rule.search(/>/) !== -1) {
         //if rule is max>lenght>min
@@ -68,55 +177,98 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
 
     if(valueLength < minValue && minValue !== null) {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'min lenght',message:errorMessage || 'Filed must have minimun '+minValue+' charachter'});
+        errors.push({type:'min lenght',message:errorMessage || this.i18n('length_min',{field:fieldName,num:minValue})});
     }
     if(valueLength > maxValue && maxValue !== null) {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'max lenght',message:errorMessage || 'Filed can contain maxmimin '+maxValue+' charachter'});
+        errors.push({type:'max lenght',message:errorMessage || this.i18n('length_max',{field:fieldName,num:maxValue})});
     }
 
 };
 
-CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessage) {
+/**
+ * @memberof CValidation
+ * @method validEqual
+ * @desc it checks if two value are equal
+ * @param fieldSelector
+ * @param {array} errors array of errors
+ * @param {string} rule current rule
+ * @param {string} errorMessage custom error message
+ * @param {string} fieldName title of field which will be shown in notification message
+ */
+CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessage,fieldName) {
     var fieldValue = jQuery.trim(fieldSelector.val());
     var params = rule.split("=");
     var equalWith = params[1];
-    var equalValue = jQuery.trim(fieldSelector.parents('form').find('input[name="'+equalWith+'"]').val());
+    var equalElement =  fieldSelector.parents('form').find('input[name="'+equalWith+'"]');
+    var equalFieldName = equalElement.attr('data-cvalidation-fieldname') || ((equalElement.prev().is('label')) ? equalElement.prev().text() : equalElement.attr('name'));
+    var equalValue = jQuery.trim(equalElement.val());
     if(fieldValue !== equalValue) {
 
         fieldSelector.addClass('cvalidation-error');
         fieldSelector.parents('form').find('input[name="'+equalWith+'"]').addClass('cvalidation-error');
-        errors.push({type:'doesn\'t match',message:errorMessage || 'Fields value doesn\'t match'});
+        errors.push({type:'doesn\'t match',message:errorMessage || this.i18n('not_equal',{field:fieldName,field2:equalFieldName})});
     }
 
 };
 
+/**
+ * @memberof CValidation
+ * @method required
+ * @desc it checks if field is filled
+ * @param fieldSelector
+ * @param errors
+ * @param errorMessage
+ */
 CValidation.prototype.required = function(fieldSelector,errors,errorMessage) {
     if(jQuery.trim(fieldSelector.val()) === '') {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'required',message:errorMessage || 'Field is required'});
+        errors.push({type:'required',message:errorMessage || this.i18n('required',{field:'Login'})});
     }
 };
 
-
-CValidation.prototype.email = function(fieldSelector,errors,errorMessage) {
+/**
+ * @memberof CValidation
+ * @method email
+ * @desc it checks if value of email has correct data
+ * @param fieldSelector
+ * @param errors
+ * @param errorMessage
+ * @param fieldName
+ */
+CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldName) {
     var regEmail = /^[a-z0-9_\.-]{1,20}@[a-z0-9_-]{1,20}\.[a-z0-9]{2,3}$/gi;
     if(jQuery.trim(fieldSelector.val()).search(regEmail) === -1) {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'invalid email',message:errorMessage || 'Email has incorrect value'});
+        errors.push({type:'invalid email',message:errorMessage || this.i18n('email')});
     }
 };
 
-CValidation.prototype.validname = function(fieldSelector,errors,errorMessage) {
+/**
+ * @memberof CValidation
+ * @method validname
+ * @desc it checks if value has valid data
+ * @param fieldSelector
+ * @param errors
+ * @param errorMessage
+ * @param fieldName
+ */
+CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fieldName) {
     var regName = /^[a-zа-я0-9_-\s]{3,40}$/gi;
    if(jQuery.trim(fieldSelector.val()).search(regName) === -1) {
        fieldSelector.addClass('cvalidation-error');
-       errors.push({type:'invalid name',message:errorMessage || 'Name has incorrect value'});
+       errors.push({type:'invalid name',message:errorMessage || this.i18n('name',{field:fieldName})});
    }
 };
 
 
+/**
+ * @memberof CValidation
+ * @method install
+ * @desc install all neccessary libraries
+ */
 CValidation.prototype.install=function() {
+    //First check if jQuery exists
     if(window.jQuery === undefined) {
 
         var jqueryLib = window.document.createElement('script');
@@ -137,7 +289,7 @@ CValidation.prototype.install=function() {
         jqueryLib.innerHTML=response;
         window.document.getElementsByTagName('head')[0].appendChild(jqueryLib);
     }
-
+    //Next check if jGrowl already exists
     if(window.jQuery.jGrowl === undefined) {
 
         var  jGrowlLib = window.document.createElement('script');
@@ -178,13 +330,36 @@ CValidation.prototype.install=function() {
         request.send();
         var response = request.responseText;
         jGrowlLibCss.innerHTML=response
-            + "\ndiv.jGrowl .ui-state-error {background-color:#CE0A0A !important}"
-            + "\ndiv.jGrowl .ui-state-success {background-color:#2F8F2B !important}"
-            + "\ndiv.jGrowl .ui-state-notify {background-color:#2AB8FF !important}"
-            + "\n.cvalidation-error  {border:1px solid #FF0000 !important}";
+            + "\ndiv.jGrowl .ui-state-error,div.jGrowl .error {background-color:#CE0A0A !important}"
+            + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background-color:#2F8F2B !important}"
+            + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background-color:#2AB8FF !important}"
+            + "\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
+            + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important}";
         window.document.getElementsByTagName('head')[0].appendChild(jGrowlLibCss);
 
     }
 
 };
+
+
+//Internationalization
+var CValidationI18N = {
+    ru:{
+        required:'Поле {{field}} обязательно',
+        length_min:'Поле {{field}} не должно быть меньше {{num}} символов',
+        length_max:'Поле {{field}} не должно быть больше {{num}} символов',
+        not_equal:'Поле {{field}} не совпадает в полем {{field2}}',
+        email:'Значение email-а некорректно',
+        name:'Поле {{field}} имеет некорректное значение'
+    },
+    en:{
+        required:'Field {{field}} is required',
+        length_min:'Field {{field}} has minimem {{num}} charactares',
+        length_max:'Поле {{field}} has maxmimun {{num}} charactares',
+        not_equal:'Field {{field}} doesn\'t match with {{field2}}',
+        email:'Value of email is incorrect',
+        name:'Field {{field}} has incorrect value'
+
+    }
+}
 
