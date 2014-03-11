@@ -5,10 +5,15 @@ Usage:
 
 in fileds set attribute:
     data-cvalidation="required"
+
     data-cvalidation="length<6" or data-cvalidation="<3length<6"
+
     data-cvalidation="length>3" or data-cvalidation="6>length>3"
+
     data-cvalidation="email"
+
     data-cvalidation="validname"
+
     data-cvalidation="equal=confirm_password" (name attribute of filed)
 
 

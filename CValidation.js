@@ -92,7 +92,7 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
          */
         var formSelector = formSelector || jQuery(window.event.target).parents('form');
         //Get All form elements
-        var formElements = formSelector.find('input,textarea').not('button[type=submit],input[type=submit]');
+        var formElements = formSelector.find('input,textarea,select').not('button[type=submit],input[type=submit]');
         //Initialize error array
         var errors = [];
         //Create reference on current class
@@ -118,6 +118,13 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
                        $this.validLength(jQuery(this),errors,rules[i],errorMessage,fieldName);
                        continue;
                    }
+
+                   //if rule of not use not method
+                   if(rules[i].search(/notBe/) !== -1) {
+                       $this.notBe(jQuery(this),errors,rules[i],errorMessage,fieldName);
+                       continue;
+                   }
+
                    //if rule of equal use validEqual method
                    if(rules[i].search(/equal/) != -1) {
                        $this.validEqual(jQuery(this),errors,rules[i],errorMessage,fieldName);
@@ -212,6 +219,21 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
 
 };
 
+CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fieldName) {
+    var fieldValue = jQuery.trim(fieldSelector.val());
+    var rule = rule.replace(/notBe/,'');
+    rule=rule.replace(/\(|\)/g,'');
+
+    var params = rule.split(",");
+    for(var i= 0,len=params.length;i<len;i++){
+        if(fieldValue===params[i]) {
+            fieldSelector.addClass('cvalidation-error');
+            errors.push({type:'not be',message:errorMessage || this.i18n('notBe',{field:fieldName,val:params[i]})});
+        }
+    }
+
+};
+
 /**
  * @memberof CValidation
  * @method required
@@ -219,13 +241,15 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
  * @param fieldSelector
  * @param errors
  * @param errorMessage
+ * @param {string} fieldName
  */
-CValidation.prototype.required = function(fieldSelector,errors,errorMessage) {
+CValidation.prototype.required = function(fieldSelector,errors,errorMessage,fieldName) {
     if(jQuery.trim(fieldSelector.val()) === '') {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'required',message:errorMessage || this.i18n('required',{field:'Login'})});
+        errors.push({type:'required',message:errorMessage || this.i18n('required',{field:fieldName})});
     }
 };
+
 
 /**
  * @memberof CValidation
@@ -330,11 +354,12 @@ CValidation.prototype.install=function() {
         request.send();
         var response = request.responseText;
         jGrowlLibCss.innerHTML=response
-            + "\ndiv.jGrowl .ui-state-error,div.jGrowl .error {background-color:#CE0A0A !important}"
-            + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background-color:#2F8F2B !important}"
-            + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background-color:#2AB8FF !important}"
+            + "\ndiv.jGrowl .ui-state-error,div.jGrowl .error {background:#CE0A0A !important}"
+            + "\ndiv.jGrowl .jGrowl-message,div.jGrowl .jGrowl-close,div.jGrowl .jGrowl-header {color:#ffffff !important}"
+            + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background:#2F8F2B !important}"
+            + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background:#2AB8FF !important}"
             + "\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
-            + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important}";
+            + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important;color:#ffffff !important}";
         window.document.getElementsByTagName('head')[0].appendChild(jGrowlLibCss);
 
     }
@@ -350,7 +375,8 @@ var CValidationI18N = {
         length_max:'Поле {{field}} не должно быть больше {{num}} символов',
         not_equal:'Поле {{field}} не совпадает в полем {{field2}}',
         email:'Значение email-а некорректно',
-        name:'Поле {{field}} имеет некорректное значение'
+        name:'Поле {{field}} имеет некорректное значение',
+        notBe:'Поле {{field}} не может принимать значение {{val}}'
     },
     en:{
         required:'Field {{field}} is required',
@@ -358,7 +384,8 @@ var CValidationI18N = {
         length_max:'Поле {{field}} has maxmimun {{num}} charactares',
         not_equal:'Field {{field}} doesn\'t match with {{field2}}',
         email:'Value of email is incorrect',
-        name:'Field {{field}} has incorrect value'
+        name:'Field {{field}} has incorrect value',
+        notBe:'Field {{field}} can\'t be equal {{val}}'
 
     }
 }
