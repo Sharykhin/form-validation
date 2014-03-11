@@ -140,6 +140,7 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
         });
        //If the errors exist, show notification messages
        if(errors.length > 0) {
+           jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
            for(var i= 0,len=errors.length;i<len;i++){
                jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
            }
@@ -149,7 +150,12 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
         if(ajax !== true) {
             formSelector.find('input[type=submit],button[type=submit]').off('click');
             formSelector.off('submit');
-            formSelector.find('input[type=submit],button[type=submit]').click();
+            if(formSelector.find('input[type=submit],button[type=submit]').length === 0) {
+                formSelector.submit();
+            } else {
+                formSelector.find('input[type=submit],button[type=submit]').click();
+            }
+
         } else {
             //if form uses ajax reuqest for handle data, so return true
             return true;
@@ -395,6 +401,7 @@ var CValidationI18N = {
         header_validname:'Осторожно',
         header_length:'Длина',
         header_match:'Несовпадение',
+        close_all:'закрыть все'
     },
     en:{
         required:'Field {{field}} is required',
@@ -410,6 +417,7 @@ var CValidationI18N = {
         header_validname:'Be careful',
         header_length:'Length',
         header_match:'Not match',
+        close_all:'close all'
 
     }
 }
