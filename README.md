@@ -31,10 +31,15 @@ custom field name:
 
     data-cvalidation-fieldname="My Field"
 
+use class:
 
     <script>
     var validation = new CValidation();
     var result = validation.submitForm($('#forma'));
+
+    var enValid = new CValidation('en');
+    enValid.setLocale('en');
+
     </script>
 
 
@@ -73,6 +78,21 @@ Main method submitForm has second parameter, by default it is undefined
 and when all data of form will be have valid values, method automatically remove all listeners from form
 and imitate click on submit, but if you pass second parameter to `true`, method return true
 if all data are valid
+
+
+I18N:
+-----
+
+File Contain object: CValidationI18N where situated translations, example:
+
+        CValidationI18N = {
+            en:{
+                require:'Field {{field}} is required'
+            }
+        }
+
+You can change any message or add new language
+
 
 
 Example:
