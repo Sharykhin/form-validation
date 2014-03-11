@@ -86,7 +86,10 @@ CValidation.prototype.createMessage = function(msg,params) {
  * @returns {boolean}
  */
 CValidation.prototype.submitForm = function(formSelector,ajax) {
-        window.event.preventDefault();
+        if(formSelector === undefined) {
+            window.event.preventDefault();
+        }
+
         /*
          * if formSelector doesn't exists get selector of form as parent of current submit button
          */
@@ -138,16 +141,15 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
        //If the errors exist, show notification messages
        if(errors.length > 0) {
            for(var i= 0,len=errors.length;i<len;i++){
-               jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error'});
+               jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
            }
            return false;
        }
-        //If all ok submit form, if it doesn't use ajax request
+
         if(ajax !== true) {
             formSelector.find('input[type=submit],button[type=submit]').off('click');
-            if(formSelector.find('input[type=submit],button[type=submit]').attr('onclick').search(/submitForm/) !== -1) {
-                formSelector.find('input[type=submit],button[type=submit]').attr('onclick','return true;').click();
-            }
+            formSelector.off('submit');
+            formSelector.find('input[type=submit],button[type=submit]').click();
         } else {
             //if form uses ajax reuqest for handle data, so return true
             return true;
@@ -184,11 +186,11 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
 
     if(valueLength < minValue && minValue !== null) {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'min lenght',message:errorMessage || this.i18n('length_min',{field:fieldName,num:minValue})});
+        errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_min',{field:fieldName,num:minValue})});
     }
     if(valueLength > maxValue && maxValue !== null) {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'max lenght',message:errorMessage || this.i18n('length_max',{field:fieldName,num:maxValue})});
+        errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_max',{field:fieldName,num:maxValue})});
     }
 
 };
@@ -214,11 +216,21 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
 
         fieldSelector.addClass('cvalidation-error');
         fieldSelector.parents('form').find('input[name="'+equalWith+'"]').addClass('cvalidation-error');
-        errors.push({type:'doesn\'t match',message:errorMessage || this.i18n('not_equal',{field:fieldName,field2:equalFieldName})});
+        errors.push({type:this.i18n('header_match'),message:errorMessage || this.i18n('not_equal',{field:fieldName,field2:equalFieldName})});
     }
 
 };
 
+/**
+ * @memberof CValidation
+ * @method notBe
+ * @desc method checks that value of the field can not be equal in brackets
+ * @param fieldSelector
+ * @param errors
+ * @param rule
+ * @param errorMessage
+ * @param fieldName
+ */
 CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fieldName) {
     var fieldValue = jQuery.trim(fieldSelector.val());
     var rule = rule.replace(/notBe/,'');
@@ -228,7 +240,7 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
     for(var i= 0,len=params.length;i<len;i++){
         if(fieldValue===params[i]) {
             fieldSelector.addClass('cvalidation-error');
-            errors.push({type:'not be',message:errorMessage || this.i18n('notBe',{field:fieldName,val:params[i]})});
+            errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('notBe',{field:fieldName,val:params[i]})});
         }
     }
 
@@ -246,7 +258,7 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
 CValidation.prototype.required = function(fieldSelector,errors,errorMessage,fieldName) {
     if(jQuery.trim(fieldSelector.val()) === '') {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'required',message:errorMessage || this.i18n('required',{field:fieldName})});
+        errors.push({type:this.i18n('header_required'),message:errorMessage || this.i18n('required',{field:fieldName})});
     }
 };
 
@@ -264,7 +276,7 @@ CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldNa
     var regEmail = /^[a-z0-9_\.-]{1,20}@[a-z0-9_-]{1,20}\.[a-z0-9]{2,3}$/gi;
     if(jQuery.trim(fieldSelector.val()).search(regEmail) === -1) {
         fieldSelector.addClass('cvalidation-error');
-        errors.push({type:'invalid email',message:errorMessage || this.i18n('email')});
+        errors.push({type:this.i18n('header_email'),message:errorMessage || this.i18n('email')});
     }
 };
 
@@ -281,7 +293,7 @@ CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fie
     var regName = /^[a-zа-я0-9_-\s]{3,40}$/gi;
    if(jQuery.trim(fieldSelector.val()).search(regName) === -1) {
        fieldSelector.addClass('cvalidation-error');
-       errors.push({type:'invalid name',message:errorMessage || this.i18n('name',{field:fieldName})});
+       errors.push({type:this.i18n('header_validname'),message:errorMessage || this.i18n('name',{field:fieldName})});
    }
 };
 
@@ -376,7 +388,13 @@ var CValidationI18N = {
         not_equal:'Поле {{field}} не совпадает в полем {{field2}}',
         email:'Значение email-а некорректно',
         name:'Поле {{field}} имеет некорректное значение',
-        notBe:'Поле {{field}} не может принимать значение {{val}}'
+        notBe:'Поле {{field}} не может принимать значение {{val}}',
+        header_required:'Обазятельно!!!',
+        header_attention:'Внимание!!!',
+        header_email:'Email',
+        header_validname:'Осторожно',
+        header_length:'Длина',
+        header_match:'Несовпадение',
     },
     en:{
         required:'Field {{field}} is required',
@@ -385,7 +403,13 @@ var CValidationI18N = {
         not_equal:'Field {{field}} doesn\'t match with {{field2}}',
         email:'Value of email is incorrect',
         name:'Field {{field}} has incorrect value',
-        notBe:'Field {{field}} can\'t be equal {{val}}'
+        notBe:'Field {{field}} can\'t be equal {{val}}',
+        header_required:'Required!!!',
+        header_attention:'Attention!!!',
+        header_email:'Email',
+        header_validname:'Be careful',
+        header_length:'Length',
+        header_match:'Not match',
 
     }
 }
