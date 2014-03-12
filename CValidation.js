@@ -101,7 +101,9 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
         //Create reference on current class
         var $this = this;
         //Remove all errors class at elements
-        formElements.removeClass('cvalidation-error');
+        formElements.removeClass('cvalidation-error animate0 wiggle');
+        //formElements.addClass('cvalidation-error animate0 wiggle');
+        console.log(formElements);
         //Walk on each element
         formElements.each(function(){
             //Check if field has neccessary attribute
@@ -191,11 +193,11 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
     }
 
     if(valueLength < minValue && minValue !== null) {
-        fieldSelector.addClass('cvalidation-error');
+        this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_min',{field:fieldName,num:minValue})});
     }
     if(valueLength > maxValue && maxValue !== null) {
-        fieldSelector.addClass('cvalidation-error');
+        this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_max',{field:fieldName,num:maxValue})});
     }
 
@@ -220,8 +222,8 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
     var equalValue = jQuery.trim(equalElement.val());
     if(fieldValue !== equalValue) {
 
-        fieldSelector.addClass('cvalidation-error');
-        fieldSelector.parents('form').find('input[name="'+equalWith+'"]').addClass('cvalidation-error');
+        this.addErrorClass(fieldSelector);
+        this.addErrorClass(fieldSelector.parents('form').find('input[name="'+equalWith+'"]'));
         errors.push({type:this.i18n('header_match'),message:errorMessage || this.i18n('not_equal',{field:fieldName,field2:equalFieldName})});
     }
 
@@ -245,7 +247,7 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
     var params = rule.split(",");
     for(var i= 0,len=params.length;i<len;i++){
         if(fieldValue===params[i]) {
-            fieldSelector.addClass('cvalidation-error');
+            this.addErrorClass(fieldSelector);
             errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('notBe',{field:fieldName,val:params[i]})});
         }
     }
@@ -263,11 +265,22 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
  */
 CValidation.prototype.required = function(fieldSelector,errors,errorMessage,fieldName) {
     if(jQuery.trim(fieldSelector.val()) === '') {
-        fieldSelector.addClass('cvalidation-error');
+        this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_required'),message:errorMessage || this.i18n('required',{field:fieldName})});
     }
 };
 
+/**
+ * @memberof CValidation
+ * @method addErrorClass
+ * @desc Add an error class to the current field in 3 miliseconds. It is needed to show animated effect
+ * @param fieldSelector jquery selector of field
+ */
+CValidation.prototype.addErrorClass = function(fieldSelector) {
+    setTimeout(function(){
+        fieldSelector.addClass('cvalidation-error animate0 wiggle');
+    },3);
+}
 
 /**
  * @memberof CValidation
@@ -281,7 +294,7 @@ CValidation.prototype.required = function(fieldSelector,errors,errorMessage,fiel
 CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldName) {
     var regEmail = /^[a-z0-9_\.-]{1,20}@[a-z0-9_-]{1,20}\.[a-z0-9]{2,3}$/gi;
     if(jQuery.trim(fieldSelector.val()).search(regEmail) === -1) {
-        fieldSelector.addClass('cvalidation-error');
+        this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_email'),message:errorMessage || this.i18n('email')});
     }
 };
@@ -298,7 +311,7 @@ CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldNa
 CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fieldName) {
     var regName = /^[a-zа-я0-9_-\s]{3,40}$/gi;
    if(jQuery.trim(fieldSelector.val()).search(regName) === -1) {
-       fieldSelector.addClass('cvalidation-error');
+       this.addErrorClass(fieldSelector);
        errors.push({type:this.i18n('header_validname'),message:errorMessage || this.i18n('name',{field:fieldName})});
    }
 };
@@ -377,7 +390,13 @@ CValidation.prototype.install=function() {
             + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background:#2F8F2B !important}"
             + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background:#2AB8FF !important}"
             + "\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
-            + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important;color:#ffffff !important}";
+            + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important;color:#ffffff !important}"
+            + "\n@-webkit-keyframes wiggle{0%{-webkit-transform:skewX(9deg)}10%{-webkit-transform:skewX(-8deg)}20%{-webkit-transform:skewX(7deg)}30%{-webkit-transform:skewX(-6deg)}40%{-webkit-transform:skewX(5deg)}50%{-webkit-transform:skewX(-4deg)}60%{-webkit-transform:skewX(3deg)}70%{-webkit-transform:skewX(-2deg)}80%{-webkit-transform:skewX(1deg)}90%{-webkit-transform:skewX(0deg)}100%{-webkit-transform:skewX(0deg)}}"
+            + "\n@-moz-keyframes wiggle{0%{-moz-transform:skewX(9deg)}10%{-moz-transform:skewX(-8deg)}20%{-moz-transform:skewX(7deg)}30%{-moz-transform:skewX(-6deg)}40%{-moz-transform:skewX(5deg)}50%{-moz-transform:skewX(-4deg)}60%{-moz-transform:skewX(3deg)}70%{-moz-transform:skewX(-2deg)}80%{-moz-transform:skewX(1deg)}90%{-moz-transform:skewX(0deg)}100%{-moz-transform:skewX(0deg)}}"
+            + "\n@-o-keyframes wiggle{0%{-o-transform:skewX(9deg)}10%{-o-transform:skewX(-8deg)}20%{-o-transform:skewX(7deg)}30%{-o-transform:skewX(-6deg)}40%{-o-transform:skewX(5deg)}50%{-o-transform:skewX(-4deg)}60%{-o-transform:skewX(3deg)}70%{-o-transform:skewX(-2deg)}80%{-o-transform:skewX(1deg)}90%{-o-transform:skewX(0deg)}100%{-o-transform:skewX(0deg)}}"
+            + "\n@keyframes wiggle{0%{transform:skewX(9deg)}10%{transform:skewX(-8deg)}20%{transform:skewX(7deg)}30%{transform:skewX(-6deg)}40%{transform:skewX(5deg)}50%{transform:skewX(-4deg)}60%{transform:skewX(3deg)}70%{transform:skewX(-2deg)}80%{transform:skewX(1deg)}90%{transform:skewX(0deg)}100%{transform:skewX(0deg)}}"
+            + "\n.wiggle{-webkit-animation-name:wiggle;-moz-animation-name:wiggle;-o-animation-name:wiggle;animation-name:wiggle;-webkit-animation-timing-function:ease-in;-moz-animation-timing-function:ease-in;-o-animation-timing-function:ease-in;animation-timing-function:ease-in}.animated.wiggle{-webkit-animation-duration:.75s;-moz-animation-duration:.75s;-o-animation-duration:.75s;animation-duration:.75s}"
+            + "\n.animate0 {-webkit-animation-duration: .8s; -webkit-animation-delay: 0s; -webkit-animation-timing-function: ease; -webkit-animation-fill-mode: both;-moz-animation-duration: .8s; -moz-animation-delay: 0s; -moz-animation-timing-function: ease;-moz-animation-fill-mode: both; -ms-animation-duration: .8s;-ms-animation-delay: 0s; -ms-animation-timing-function: ease; -ms-animation-fill-mode: both;animation-duration: .8s; animation-delay: 0s; animation-timing-function: ease; animation-fill-mode: both;}";
         window.document.getElementsByTagName('head')[0].appendChild(jGrowlLibCss);
 
     }

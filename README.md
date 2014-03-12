@@ -71,7 +71,7 @@ Value of the field is equal value of the second field
 Value of the field can not be equal values in brackets
 
 
-IMPORTANT
+Important
 ---------
 
 Main method submitForm has second parameter, by default it is undefined
@@ -80,7 +80,7 @@ and imitate click on submit, but if you pass second parameter to `true`, method 
 if all data are valid
 
 
-I18N:
+I18n:
 -----
 
 File Contain object: CValidationI18N where situated translations, example:
