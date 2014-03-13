@@ -3,7 +3,8 @@ Validation class, which checks your form
 Usage:
 ------
 
-in fileds set attribute:
+Set necessary attribute in field
+
     data-cvalidation="required"
 
     data-cvalidation="length<6" or data-cvalidation="<3length<6"
@@ -41,6 +42,43 @@ use class:
     enValid.setLocale('en');
 
     </script>
+
+
+
+Options:
+--------
+
+You can use different notifications. By default CValidation use jGrowl, but you can choose another:
+
+    Available:
+        powerTip
+
+First variant:
+
+     <script>
+        var validation = new CValidation('en','powerTip');
+     </script>
+
+Second variant:
+
+     <script>
+        var validation = new CValidation();
+        validation.setShowType('powerTip');
+     </script>
+
+
+
+You can use a different effect of the notifications.By default CValidation use 'wiggle'
+
+    Available:
+        wiggle
+
+
+
+        <script>
+            var validation = new CValidation();
+            validation.setAnimateEffect('wiggle');
+         </script>
 
 
 Rules:
@@ -83,15 +121,23 @@ if all data are valid
 I18n:
 -----
 
-File Contain object: CValidationI18N where situated translations, example:
+Class use object i18nMessages, where situated all translations
 
-        CValidationI18N = {
+        i18nMessages = {
             en:{
                 require:'Field {{field}} is required'
             }
         }
 
 You can change any message or add new language
+
+        <script>
+            var validation = new CValidation();
+            console.log(validation.i18nMessages.en.required);
+            validation.i18nMessages.fr = {
+                require:'Field {{field}} is required'
+            };
+         </script>
 
 
 

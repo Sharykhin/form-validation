@@ -5,13 +5,46 @@
  * @param locale current language
  * @constructor
  */
-var CValidation = function(locale){
-    //Install all neccessary libraries
-    this.install();
+var CValidation = function(locale,showType){
+    //Install jQuery library
+    this.installQuery();
     //Set current language. By default language is russian(ru)
     this.locale = locale || this.setLocale('ru');
-
+    //Get a current type of the notifications
+    this.showType = showType || this.getShowType();
+    //Install appropriate library of type
+    this['install'+this.showType]();
+    //Install Custom styles
+    this.installCValidationCss();
+    this.animateEffect = this.getAnimateEffect();
 }
+
+CValidation.prototype.setShowType=function(type) {
+    if(type === undefined) {
+        throw "param type is required";
+    }
+    this.showType = type;
+    this['install'+this.showType]();
+};
+
+CValidation.prototype.getShowType = function() {
+    return this.showType || 'jGrowl';
+};
+
+CValidation.prototype.getAnimateEffect = function() {
+    return this.animateEffect || 'wiggle';
+};
+
+CValidation.prototype.setAnimateEffect = function(effect) {
+    if(effect === undefined) {
+        throw "You didn't set effect. Did you forget to do it?";
+    }
+    this.animateEffect = effect;
+}
+
+CValidation.prototype.animationEffects = {
+  'wiggle':' animate0 wiggle '
+};
 
 /**
  * @memberof CValidation
@@ -48,7 +81,7 @@ CValidation.prototype.getLocale = function() {
  * @returns {string} message
  */
 CValidation.prototype.i18n = function(type,params) {
-    return this.createMessage(CValidationI18N[this.locale][type],params);
+    return this.createMessage(this.i18nMessages[this.locale][type],params);
 };
 
 /**
@@ -101,8 +134,15 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
         //Create reference on current class
         var $this = this;
         //Remove all errors class at elements
-        formElements.removeClass('cvalidation-error animate0 wiggle');
-        //formElements.addClass('cvalidation-error animate0 wiggle');
+        formElements.removeClass('cvalidation-error'+this.animationEffects[this.animateEffect]);
+        //Remove attributes of powertip
+        formElements.removeAttr('data-powertip');
+        //Remove all tips of powertip
+        if(this.showType === 'powerTip') {
+            formElements.each(function(){
+                jQuery.powerTip.destroy(jQuery(this));
+            });
+        }
         console.log(formElements);
         //Walk on each element
         formElements.each(function(){
@@ -142,9 +182,24 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
         });
        //If the errors exist, show notification messages
        if(errors.length > 0) {
-           jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
-           for(var i= 0,len=errors.length;i<len;i++){
-               jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
+           if(this.showType === 'jGrowl') {
+               jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
+               for(var i= 0,len=errors.length;i<len;i++){
+                   jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
+               }
+           }
+           if(this.showType === 'powerTip') {
+
+               for(var i= 0,len=errors.length;i<len;i++){
+                   errors[i].element.attr('data-powertip',errors[i].message);
+                   errors[i].element.powerTip({manual:false,smartPlacement:true});
+//                   errors[i].element.powerTip({manual:true,smartPlacement:true}).powerTip('show');
+//                   setTimeout(function(){
+//                       jQuery.powerTip.hide();
+//                   },4000);
+                   //break;
+
+               }
            }
            return false;
        }
@@ -224,7 +279,7 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
 
         this.addErrorClass(fieldSelector);
         this.addErrorClass(fieldSelector.parents('form').find('input[name="'+equalWith+'"]'));
-        errors.push({type:this.i18n('header_match'),message:errorMessage || this.i18n('not_equal',{field:fieldName,field2:equalFieldName})});
+        errors.push({type:this.i18n('header_match'),message:errorMessage || this.i18n('not_equal',{field:fieldName,field2:equalFieldName}),element:fieldSelector});
     }
 
 };
@@ -248,7 +303,7 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
     for(var i= 0,len=params.length;i<len;i++){
         if(fieldValue===params[i]) {
             this.addErrorClass(fieldSelector);
-            errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('notBe',{field:fieldName,val:params[i]})});
+            errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('notBe',{field:fieldName,val:params[i]}),element:fieldSelector});
         }
     }
 
@@ -266,7 +321,7 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
 CValidation.prototype.required = function(fieldSelector,errors,errorMessage,fieldName) {
     if(jQuery.trim(fieldSelector.val()) === '') {
         this.addErrorClass(fieldSelector);
-        errors.push({type:this.i18n('header_required'),message:errorMessage || this.i18n('required',{field:fieldName})});
+        errors.push({type:this.i18n('header_required'),message:errorMessage || this.i18n('required',{field:fieldName}),element:fieldSelector});
     }
 };
 
@@ -277,8 +332,9 @@ CValidation.prototype.required = function(fieldSelector,errors,errorMessage,fiel
  * @param fieldSelector jquery selector of field
  */
 CValidation.prototype.addErrorClass = function(fieldSelector) {
+    var $this = this;
     setTimeout(function(){
-        fieldSelector.addClass('cvalidation-error animate0 wiggle');
+        fieldSelector.addClass('cvalidation-error ' + $this.animationEffects[$this.animateEffect]);
     },3);
 }
 
@@ -295,7 +351,7 @@ CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldNa
     var regEmail = /^[a-z0-9_\.-]{1,20}@[a-z0-9_-]{1,20}\.[a-z0-9]{2,3}$/gi;
     if(jQuery.trim(fieldSelector.val()).search(regEmail) === -1) {
         this.addErrorClass(fieldSelector);
-        errors.push({type:this.i18n('header_email'),message:errorMessage || this.i18n('email')});
+        errors.push({type:this.i18n('header_email'),message:errorMessage || this.i18n('email'),element:fieldSelector});
     }
 };
 
@@ -312,7 +368,7 @@ CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fie
     var regName = /^[a-zа-я0-9_-\s]{3,40}$/gi;
    if(jQuery.trim(fieldSelector.val()).search(regName) === -1) {
        this.addErrorClass(fieldSelector);
-       errors.push({type:this.i18n('header_validname'),message:errorMessage || this.i18n('name',{field:fieldName})});
+       errors.push({type:this.i18n('header_validname'),message:errorMessage || this.i18n('name',{field:fieldName}),element:fieldSelector});
    }
 };
 
@@ -322,28 +378,8 @@ CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fie
  * @method install
  * @desc install all neccessary libraries
  */
-CValidation.prototype.install=function() {
-    //First check if jQuery exists
-    if(window.jQuery === undefined) {
+CValidation.prototype.installjGrowl=function() {
 
-        var jqueryLib = window.document.createElement('script');
-        jqueryLib.setAttribute('type','text/javascript');
-//        jqueryLib.setAttribute('src', 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js');
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-        // load
-        request.open('GET', 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js', false);
-        request.send();
-        var response = request.responseText;
-        jqueryLib.innerHTML=response;
-        window.document.getElementsByTagName('head')[0].appendChild(jqueryLib);
-    }
     //Next check if jGrowl already exists
     if(window.jQuery.jGrowl === undefined) {
 
@@ -367,7 +403,7 @@ CValidation.prototype.install=function() {
         jGrowlLib.innerHTML=response;
         window.document.getElementsByTagName('head')[0].appendChild(jGrowlLib);
 
-        jGrowlLib.setAttribute('type','text/javascript');
+        //jGrowlLib.setAttribute('type','text/javascript');
 
         var  jGrowlLibCss = window.document.createElement('style');
         jGrowlLibCss.setAttribute('type','text/css');
@@ -388,24 +424,124 @@ CValidation.prototype.install=function() {
             + "\ndiv.jGrowl .ui-state-error,div.jGrowl .error {background:#CE0A0A !important}"
             + "\ndiv.jGrowl .jGrowl-message,div.jGrowl .jGrowl-close,div.jGrowl .jGrowl-header {color:#ffffff !important}"
             + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background:#2F8F2B !important}"
-            + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background:#2AB8FF !important}"
-            + "\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
-            + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important;color:#ffffff !important}"
-            + "\n@-webkit-keyframes wiggle{0%{-webkit-transform:skewX(9deg)}10%{-webkit-transform:skewX(-8deg)}20%{-webkit-transform:skewX(7deg)}30%{-webkit-transform:skewX(-6deg)}40%{-webkit-transform:skewX(5deg)}50%{-webkit-transform:skewX(-4deg)}60%{-webkit-transform:skewX(3deg)}70%{-webkit-transform:skewX(-2deg)}80%{-webkit-transform:skewX(1deg)}90%{-webkit-transform:skewX(0deg)}100%{-webkit-transform:skewX(0deg)}}"
-            + "\n@-moz-keyframes wiggle{0%{-moz-transform:skewX(9deg)}10%{-moz-transform:skewX(-8deg)}20%{-moz-transform:skewX(7deg)}30%{-moz-transform:skewX(-6deg)}40%{-moz-transform:skewX(5deg)}50%{-moz-transform:skewX(-4deg)}60%{-moz-transform:skewX(3deg)}70%{-moz-transform:skewX(-2deg)}80%{-moz-transform:skewX(1deg)}90%{-moz-transform:skewX(0deg)}100%{-moz-transform:skewX(0deg)}}"
-            + "\n@-o-keyframes wiggle{0%{-o-transform:skewX(9deg)}10%{-o-transform:skewX(-8deg)}20%{-o-transform:skewX(7deg)}30%{-o-transform:skewX(-6deg)}40%{-o-transform:skewX(5deg)}50%{-o-transform:skewX(-4deg)}60%{-o-transform:skewX(3deg)}70%{-o-transform:skewX(-2deg)}80%{-o-transform:skewX(1deg)}90%{-o-transform:skewX(0deg)}100%{-o-transform:skewX(0deg)}}"
-            + "\n@keyframes wiggle{0%{transform:skewX(9deg)}10%{transform:skewX(-8deg)}20%{transform:skewX(7deg)}30%{transform:skewX(-6deg)}40%{transform:skewX(5deg)}50%{transform:skewX(-4deg)}60%{transform:skewX(3deg)}70%{transform:skewX(-2deg)}80%{transform:skewX(1deg)}90%{transform:skewX(0deg)}100%{transform:skewX(0deg)}}"
-            + "\n.wiggle{-webkit-animation-name:wiggle;-moz-animation-name:wiggle;-o-animation-name:wiggle;animation-name:wiggle;-webkit-animation-timing-function:ease-in;-moz-animation-timing-function:ease-in;-o-animation-timing-function:ease-in;animation-timing-function:ease-in}.animated.wiggle{-webkit-animation-duration:.75s;-moz-animation-duration:.75s;-o-animation-duration:.75s;animation-duration:.75s}"
-            + "\n.animate0 {-webkit-animation-duration: .8s; -webkit-animation-delay: 0s; -webkit-animation-timing-function: ease; -webkit-animation-fill-mode: both;-moz-animation-duration: .8s; -moz-animation-delay: 0s; -moz-animation-timing-function: ease;-moz-animation-fill-mode: both; -ms-animation-duration: .8s;-ms-animation-delay: 0s; -ms-animation-timing-function: ease; -ms-animation-fill-mode: both;animation-duration: .8s; animation-delay: 0s; animation-timing-function: ease; animation-fill-mode: both;}";
+            + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background:#2AB8FF !important}";
         window.document.getElementsByTagName('head')[0].appendChild(jGrowlLibCss);
 
     }
 
 };
 
+/**
+ * @memberof CValidation
+ * @method installpowerTip
+ * @desc Install powerTip library from cdnjs. Version is 1.2.0
+ */
+CValidation.prototype.installpowerTip = function() {
+    //Check if powerTip already exists
+    if(window.jQuery.powerTip === undefined) {
+        //Create a script tag
+        var  powerTip = window.document.createElement('script');
+        //Set an attribute for it
+        powerTip.setAttribute('type','text/javascript');
+        //Create an ajax request
+        var request;
+        if (window.XMLHttpRequest) {
+            // IE7+, Firefox, Chrome, Opera, Safari
+            request = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            request = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        // Send request
+        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.js', false);
+        request.send();
+        //Get response
+        var response = request.responseText;
+        //Set response's body into created script tag
+        powerTip.innerHTML=response;
+        window.document.getElementsByTagName('head')[0].appendChild(powerTip);
 
-//Internationalization
-var CValidationI18N = {
+
+        var  powerTipCss = window.document.createElement('style');
+        powerTipCss.setAttribute('type','text/css');
+
+        var request;
+        if (window.XMLHttpRequest) {
+            // IE7+, Firefox, Chrome, Opera, Safari
+            request = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            request = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        // load
+        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/css/jquery.powertip-red.css', false);
+        request.send();
+        var response = request.responseText;
+        powerTipCss.innerHTML=response;
+        window.document.getElementsByTagName('head')[0].appendChild(powerTipCss);
+
+    }
+
+};
+
+/**
+ * @memberof CValidation
+ * @method installQuery
+ * @desc install jQuery library from google. Version is 1.10.1
+ */
+CValidation.prototype.installQuery = function(){
+    //First check if jQuery exists
+    if(window.jQuery === undefined) {
+        //Create a script tag
+        var jqueryLib = window.document.createElement('script');
+        //Set an attribute for it
+        jqueryLib.setAttribute('type','text/javascript');
+        //Create an ajax request
+        var request;
+        if (window.XMLHttpRequest) {
+            // IE7+, Firefox, Chrome, Opera, Safari
+            request = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            request = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        // Send request
+        request.open('GET', 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js', false);
+        request.send();
+        //Get response
+        var response = request.responseText;
+        //Set response's body into created script tag
+        jqueryLib.innerHTML=response;
+        //Insert a script tag in the end of head
+        window.document.getElementsByTagName('head')[0].appendChild(jqueryLib);
+    }
+};
+
+/**
+ * @memberof CValidation
+ * @method installCValidationCss
+ * @desc Install custom css styles for this class
+ */
+CValidation.prototype.installCValidationCss = function() {
+    var  CValidationCss = window.document.createElement('style');
+    CValidationCss.setAttribute('type','text/css');
+    CValidationCss.innerHTML="\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
+        + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important;color:#ffffff !important}"
+        + "\n@-webkit-keyframes wiggle{0%{-webkit-transform:skewX(9deg)}10%{-webkit-transform:skewX(-8deg)}20%{-webkit-transform:skewX(7deg)}30%{-webkit-transform:skewX(-6deg)}40%{-webkit-transform:skewX(5deg)}50%{-webkit-transform:skewX(-4deg)}60%{-webkit-transform:skewX(3deg)}70%{-webkit-transform:skewX(-2deg)}80%{-webkit-transform:skewX(1deg)}90%{-webkit-transform:skewX(0deg)}100%{-webkit-transform:skewX(0deg)}}"
+        + "\n@-moz-keyframes wiggle{0%{-moz-transform:skewX(9deg)}10%{-moz-transform:skewX(-8deg)}20%{-moz-transform:skewX(7deg)}30%{-moz-transform:skewX(-6deg)}40%{-moz-transform:skewX(5deg)}50%{-moz-transform:skewX(-4deg)}60%{-moz-transform:skewX(3deg)}70%{-moz-transform:skewX(-2deg)}80%{-moz-transform:skewX(1deg)}90%{-moz-transform:skewX(0deg)}100%{-moz-transform:skewX(0deg)}}"
+        + "\n@-o-keyframes wiggle{0%{-o-transform:skewX(9deg)}10%{-o-transform:skewX(-8deg)}20%{-o-transform:skewX(7deg)}30%{-o-transform:skewX(-6deg)}40%{-o-transform:skewX(5deg)}50%{-o-transform:skewX(-4deg)}60%{-o-transform:skewX(3deg)}70%{-o-transform:skewX(-2deg)}80%{-o-transform:skewX(1deg)}90%{-o-transform:skewX(0deg)}100%{-o-transform:skewX(0deg)}}"
+        + "\n@keyframes wiggle{0%{transform:skewX(9deg)}10%{transform:skewX(-8deg)}20%{transform:skewX(7deg)}30%{transform:skewX(-6deg)}40%{transform:skewX(5deg)}50%{transform:skewX(-4deg)}60%{transform:skewX(3deg)}70%{transform:skewX(-2deg)}80%{transform:skewX(1deg)}90%{transform:skewX(0deg)}100%{transform:skewX(0deg)}}"
+        + "\n.wiggle{-webkit-animation-name:wiggle;-moz-animation-name:wiggle;-o-animation-name:wiggle;animation-name:wiggle;-webkit-animation-timing-function:ease-in;-moz-animation-timing-function:ease-in;-o-animation-timing-function:ease-in;animation-timing-function:ease-in}.animated.wiggle{-webkit-animation-duration:.75s;-moz-animation-duration:.75s;-o-animation-duration:.75s;animation-duration:.75s}"
+        + "\n.animate0 {-webkit-animation-duration: .8s; -webkit-animation-delay: 0s; -webkit-animation-timing-function: ease; -webkit-animation-fill-mode: both;-moz-animation-duration: .8s; -moz-animation-delay: 0s; -moz-animation-timing-function: ease;-moz-animation-fill-mode: both; -ms-animation-duration: .8s;-ms-animation-delay: 0s; -ms-animation-timing-function: ease; -ms-animation-fill-mode: both;animation-duration: .8s; animation-delay: 0s; animation-timing-function: ease; animation-fill-mode: both;}";
+    window.document.getElementsByTagName('head')[0].appendChild(CValidationCss);
+}
+
+/**
+ * @memberof CValidation
+ * @desc internationalization translations
+ * @type {object}
+ */
+CValidation.prototype.i18nMessages = {
     ru:{
         required:'Поле {{field}} обязательно',
         length_min:'Поле {{field}} не должно быть меньше {{num}} символов',
@@ -439,5 +575,8 @@ var CValidationI18N = {
         close_all:'close all'
 
     }
-}
+};
+
+
+
 
