@@ -8,6 +8,8 @@
 var CValidation = function(locale,showType){
     //Install jQuery library
     this.installQuery();
+    //Install plugin Masked Input to use mask
+    this.installmaskedinput();
     //Set current language. By default language is russian(ru)
     this.locale = locale || this.setLocale('ru');
     //Get a current type of the notifications
@@ -111,6 +113,16 @@ CValidation.prototype.createMessage = function(msg,params) {
     }
 }
 
+CValidation.prototype.showCustomNotification = function(message) {
+  jQuery('<div />').addClass('CValidation-cutom-notification').css({'width':'200px','position':'fixed','left':'50%','marginLeft':'-100px','zIndex':'9999','top':'40%','background':'rgba(255,107,110,0.8)','color':'#ffffff','padding':'20px','borderRadius':'10px'}).text(message).fadeIn().appendTo('body');
+    setTimeout(function(){
+        jQuery('div.CValidation-cutom-notification').fadeOut(function(){
+            jQuery(this).remove();
+        });
+    },4000);
+
+};
+
 /**
  * @memberof CValidation
  * @desc A method check form on valid data
@@ -119,10 +131,9 @@ CValidation.prototype.createMessage = function(msg,params) {
  * @returns {boolean}
  */
 CValidation.prototype.submitForm = function(formSelector,ajax) {
-        if(formSelector === undefined) {
+//        if(formSelector === undefined) {
             window.event.preventDefault();
-        }
-
+//        }
         /*
          * if formSelector doesn't exists get selector of form as parent of current submit button
          */
@@ -143,7 +154,8 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
                 jQuery.powerTip.destroy(jQuery(this));
             });
         }
-        console.log(formElements);
+        formSelector.find('.CValidation-textError').remove();
+
         //Walk on each element
         formElements.each(function(){
             //Check if field has neccessary attribute
@@ -164,9 +176,10 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
                        continue;
                    }
 
+
                    //if rule of not use not method
-                   if(rules[i].search(/notBe/) !== -1) {
-                       $this.notBe(jQuery(this),errors,rules[i],errorMessage,fieldName);
+                   if(rules[i].search(/notToBe/) !== -1) {
+                       $this.notToBe(jQuery(this),errors,rules[i],errorMessage,fieldName);
                        continue;
                    }
 
@@ -182,25 +195,8 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
         });
        //If the errors exist, show notification messages
        if(errors.length > 0) {
-           if(this.showType === 'jGrowl') {
-               jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
-               for(var i= 0,len=errors.length;i<len;i++){
-                   jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
-               }
-           }
-           if(this.showType === 'powerTip') {
 
-               for(var i= 0,len=errors.length;i<len;i++){
-                   errors[i].element.attr('data-powertip',errors[i].message);
-                   errors[i].element.powerTip({manual:false,smartPlacement:true});
-//                   errors[i].element.powerTip({manual:true,smartPlacement:true}).powerTip('show');
-//                   setTimeout(function(){
-//                       jQuery.powerTip.hide();
-//                   },4000);
-                   //break;
-
-               }
-           }
+           this['show_'+this.showType+'_Notification'](errors);
            return false;
        }
 
@@ -221,6 +217,34 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
 
 
 };
+
+CValidation.prototype.show_jGrowl_Notification = function(errors) {
+    jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
+    for(var i= 0,len=errors.length;i<len;i++){
+        jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
+    }
+};
+
+CValidation.prototype.show_powerTip_Notification = function(errors) {
+    this.showCustomNotification(this.i18n('error_occured'));
+    for(var i= 0,len=errors.length;i<len;i++){
+        if(errors[i].element.attr('data-powertip') === undefined) {
+            errors[i].element.attr('data-powertip',errors[i].message);
+        }
+        errors[i].element.powerTip({manual:false,smartPlacement:true});
+        errors[i].element.focus(function(){
+            jQuery(this).powerTip('hide');
+        });
+    }
+};
+
+CValidation.prototype.show_textError_Notification = function(errors) {
+
+    for(var i= 0,len=errors.length;i<len;i++){
+        errors[i].element.after("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>");
+    }
+
+}
 
 /**
  * @memberof CValidation
@@ -258,6 +282,16 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
 
 };
 
+CValidation.prototype.toBeInt = function(fieldSelector,errors,errorMessage,fieldName) {
+    var fieldValue = jQuery.trim(fieldSelector.val());
+    if(fieldValue.search(/[0-9].*/)===-1) {
+        this.addErrorClass(fieldSelector);
+        errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('toBeInt',{field:fieldName}),element:fieldSelector});
+    }
+}
+
+
+
 /**
  * @memberof CValidation
  * @method validEqual
@@ -286,7 +320,7 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
 
 /**
  * @memberof CValidation
- * @method notBe
+ * @method notToBe
  * @desc method checks that value of the field can not be equal in brackets
  * @param fieldSelector
  * @param errors
@@ -294,9 +328,9 @@ CValidation.prototype.validEqual = function(fieldSelector,errors,rule,errorMessa
  * @param errorMessage
  * @param fieldName
  */
-CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fieldName) {
+CValidation.prototype.notToBe = function(fieldSelector,errors,rule,errorMessage,fieldName) {
     var fieldValue = jQuery.trim(fieldSelector.val());
-    var rule = rule.replace(/notBe/,'');
+    var rule = rule.replace(/notToBe/,'');
     rule=rule.replace(/\(|\)/g,'');
 
     var params = rule.split(",");
@@ -308,6 +342,7 @@ CValidation.prototype.notBe = function(fieldSelector,errors,rule,errorMessage,fi
     }
 
 };
+
 
 /**
  * @memberof CValidation
@@ -372,6 +407,9 @@ CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fie
    }
 };
 
+CValidation.prototype.masked=function(selector,rule) {
+    selector.mask(rule);
+}
 
 /**
  * @memberof CValidation
@@ -484,6 +522,10 @@ CValidation.prototype.installpowerTip = function() {
 
 };
 
+CValidation.prototype.installtextError = function() {
+
+};
+
 /**
  * @memberof CValidation
  * @method installQuery
@@ -516,6 +558,42 @@ CValidation.prototype.installQuery = function(){
         window.document.getElementsByTagName('head')[0].appendChild(jqueryLib);
     }
 };
+
+CValidation.prototype.installmaskedinput = function(){
+    if(window.jQuery.mask === undefined) {
+        //Create a script tag
+        var maskedinput = window.document.createElement('script');
+        //Set an attribute for it
+        maskedinput.setAttribute('type','text/javascript');
+        //Create an ajax request
+        var request;
+        if (window.XMLHttpRequest) {
+            // IE7+, Firefox, Chrome, Opera, Safari
+            request = new XMLHttpRequest();
+        } else {
+            // code for IE6, IE5
+            request = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+        // Send request
+        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.3.1/jquery.maskedinput.min.js', false);
+        request.send();
+        //Get response
+        var response = request.responseText;
+        //Set response's body into created script tag
+        maskedinput.innerHTML=response;
+        //Insert a script tag in the end of head
+        window.document.getElementsByTagName('head')[0].appendChild(maskedinput);
+//        (function() {
+//            var masked = document.createElement('script'); masked.type = 'text/javascript'; masked.async = true;
+//            masked.src = '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.3.1/jquery.maskedinput.min.js';
+//            //var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(masked, s);
+//            window.document.getElementsByTagName('head')[0].appendChild(masked);
+//        })();
+
+
+    }
+};
+
 
 /**
  * @memberof CValidation
@@ -556,7 +634,9 @@ CValidation.prototype.i18nMessages = {
         header_validname:'Осторожно',
         header_length:'Длина',
         header_match:'Несовпадение',
-        close_all:'закрыть все'
+        close_all:'закрыть все',
+        error_occured:'Данные не корректны!Пожалуйста проверьте поля отмеченные красной рамкой',
+        toBeInt:'Значение поля {{field}} должно быть числом'
     },
     en:{
         required:'Field {{field}} is required',
@@ -572,7 +652,9 @@ CValidation.prototype.i18nMessages = {
         header_validname:'Be careful',
         header_length:'Length',
         header_match:'Not match',
-        close_all:'close all'
+        close_all:'close all',
+        error_occured:'Errors was occured, please check data in the fields with red border',
+        toBeInt:'Value of a field {{field}} must be numeric'
 
     }
 };

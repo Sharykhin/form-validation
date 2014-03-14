@@ -45,6 +45,16 @@ use class:
 
 
 
+Also plugin use masked input: http://digitalbush.com/projects/masked-input-plugin.
+
+ use it:
+
+       $("#date").mask("99/99/9999");
+       $("#phone").mask("(999) 999-9999");
+       $("#tin").mask("99-9999999");
+       $("#ssn").mask("999-99-9999");
+
+
 Options:
 --------
 
@@ -52,11 +62,13 @@ You can use different notifications. By default CValidation use jGrowl, but you 
 
     Available:
         powerTip
+        textError
 
 First variant:
 
      <script>
         var validation = new CValidation('en','powerTip');
+        var validation = new CValidation('en','textError');
      </script>
 
 Second variant:
@@ -64,6 +76,7 @@ Second variant:
      <script>
         var validation = new CValidation();
         validation.setShowType('powerTip');
+        validation.setShowType('textError');
      </script>
 
 
