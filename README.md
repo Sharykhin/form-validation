@@ -19,6 +19,8 @@ Set necessary attribute in field
 
     data-cvalidation="notBe(0,abc)"
 
+     data-cvalidation="toBeInt"
+
 
 you can use all this rules in mixed
 
@@ -61,8 +63,10 @@ Options:
 You can use different notifications. By default CValidation use jGrowl, but you can choose another:
 
     Available:
+        jGrowl
         powerTip
         textError
+        listError
 
 First variant:
 
@@ -77,6 +81,7 @@ Second variant:
         var validation = new CValidation();
         validation.setShowType('powerTip');
         validation.setShowType('textError');
+        validation.setShowType('listError');
      </script>
 
 
@@ -121,6 +126,9 @@ Value of the field is equal value of the second field
 
 Value of the field can not be equal values in brackets
 
+    data-cvalidation="toBeInt"
+
+Value of the filed must be integer
 
 Important
 ---------

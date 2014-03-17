@@ -21,7 +21,14 @@ var CValidation = function(locale,showType){
     this.animateEffect = this.getAnimateEffect();
 }
 
+/**
+ * @memberof CValidation
+ * @method setShowType
+ * @desc set type of notifications
+ * @param {string} type name of type
+ */
 CValidation.prototype.setShowType=function(type) {
+    //Param type is required
     if(type === undefined) {
         throw "param type is required";
     }
@@ -29,21 +36,45 @@ CValidation.prototype.setShowType=function(type) {
     this['install'+this.showType]();
 };
 
+/**
+ * @memberof CValidation
+ * @method getShowType
+ * @desc Get current type of the notifications
+ * @returns {*|string}
+ */
 CValidation.prototype.getShowType = function() {
     return this.showType || 'jGrowl';
 };
 
+/**
+ * @memberof CValidation
+ * @method getAnimateEffect
+ * @desc get current animate effect, when errors occured
+ * @returns {*|string}
+ */
 CValidation.prototype.getAnimateEffect = function() {
     return this.animateEffect || 'wiggle';
 };
 
+/**
+ * @memberof CValidation
+ * @method setAnimateEffect
+ * @desc set animate effect of errors
+ * @param {string} effect name of effect
+ */
 CValidation.prototype.setAnimateEffect = function(effect) {
+    //Param effect is required
     if(effect === undefined) {
         throw "You didn't set effect. Did you forget to do it?";
     }
     this.animateEffect = effect;
 }
 
+/**
+ * @memberof CValidation
+ * @type {{wiggle: string}}
+ * @desc list of available effects
+ */
 CValidation.prototype.animationEffects = {
   'wiggle':' animate0 wiggle '
 };
@@ -111,15 +142,23 @@ CValidation.prototype.createMessage = function(msg,params) {
         return msg
 
     }
-}
+};
 
-CValidation.prototype.showCustomNotification = function(message) {
+/**
+ * @memberof CValidation
+ * @method showCustomNotification
+ * @desc Create a custom popUp notification
+ * @param {string} message message of notification
+ * @param {integer|string} duration time when popUp will be hidden
+ */
+CValidation.prototype.showCustomNotification = function(message,duration) {
+  var duration = parseInt(duration,10) || 4000;
   jQuery('<div />').addClass('CValidation-cutom-notification').css({'width':'200px','position':'fixed','left':'50%','marginLeft':'-100px','zIndex':'9999','top':'40%','background':'rgba(255,107,110,0.8)','color':'#ffffff','padding':'20px','borderRadius':'10px'}).text(message).fadeIn().appendTo('body');
     setTimeout(function(){
         jQuery('div.CValidation-cutom-notification').fadeOut(function(){
             jQuery(this).remove();
         });
-    },4000);
+    },duration);
 
 };
 
@@ -155,6 +194,13 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
             });
         }
         formSelector.find('.CValidation-textError').remove();
+
+        if( formSelector.find('.CValidationListErrors').length > 0) {
+            formSelector.find('.CValidationListErrors').slideUp(function(){
+                jQuery(this).remove();
+            });
+        }
+
 
         //Walk on each element
         formElements.each(function(){
@@ -194,9 +240,10 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
            }
         });
        //If the errors exist, show notification messages
+        console.log(errors.length);
        if(errors.length > 0) {
 
-           this['show_'+this.showType+'_Notification'](errors);
+           this['show_'+this.showType+'_Notification'](errors,formSelector);
            return false;
        }
 
@@ -218,6 +265,12 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
 
 };
 
+/**
+ * @memberof CValidation
+ * @method show_jGrowl_Notification
+ * @desc show notifications using jGworl plugin
+ * @param {object} errors
+ */
 CValidation.prototype.show_jGrowl_Notification = function(errors) {
     jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
     for(var i= 0,len=errors.length;i<len;i++){
@@ -225,6 +278,13 @@ CValidation.prototype.show_jGrowl_Notification = function(errors) {
     }
 };
 
+/**
+ * @memberof CValidation
+ * @method show_powerTip_Notification
+ * @desc show error notifications using powerTip plugin
+ * @link http://stevenbenner.github.io/jquery-powertip/
+ * @param {object} errors
+ */
 CValidation.prototype.show_powerTip_Notification = function(errors) {
     this.showCustomNotification(this.i18n('error_occured'));
     for(var i= 0,len=errors.length;i<len;i++){
@@ -238,13 +298,37 @@ CValidation.prototype.show_powerTip_Notification = function(errors) {
     }
 };
 
+/**
+ * @memberof CValidation
+ * @method show_textError_Notification
+ * @desc show error message under each field
+ * @param {object} errors
+ */
 CValidation.prototype.show_textError_Notification = function(errors) {
 
     for(var i= 0,len=errors.length;i<len;i++){
         errors[i].element.after("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>");
     }
 
-}
+};
+
+/**
+ * @memberof CValidation
+ * @method show_listError_Notification
+ * @desc show list of errors in the end of form
+ * @param {object} errors
+ * @param formSelector selector of form
+ */
+CValidation.prototype.show_listError_Notification = function(errors,formSelector) {
+
+    formSelector.append("<div style='display: none' class='CValidationListErrors' />")
+    for(var i= 0,len=errors.length;i<len;i++){
+        jQuery("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>").appendTo('.CValidationListErrors');
+    }
+    formSelector.find('.CValidationListErrors').slideDown();
+
+
+};
 
 /**
  * @memberof CValidation
@@ -282,13 +366,23 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
 
 };
 
+
+/**
+ * @memberof CValidation
+ * @method toBeInt
+ * @desc A value in the field must be integer
+ * @param fieldSelector
+ * @param {array} errors array of errors
+ * @param {string} errorMessage custom error message
+ * @param {string} fieldName title of field which will be shown in notification message
+ */
 CValidation.prototype.toBeInt = function(fieldSelector,errors,errorMessage,fieldName) {
     var fieldValue = jQuery.trim(fieldSelector.val());
     if(fieldValue.search(/[0-9].*/)===-1) {
         this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('toBeInt',{field:fieldName}),element:fieldSelector});
     }
-}
+};
 
 
 
@@ -407,9 +501,6 @@ CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fie
    }
 };
 
-CValidation.prototype.masked=function(selector,rule) {
-    selector.mask(rule);
-}
 
 /**
  * @memberof CValidation
@@ -522,7 +613,17 @@ CValidation.prototype.installpowerTip = function() {
 
 };
 
+/**
+ * @memberof CValidation
+ */
 CValidation.prototype.installtextError = function() {
+
+};
+
+/**
+ * @memberof CValidation
+ */
+CValidation.prototype.installlistError = function() {
 
 };
 
@@ -559,6 +660,11 @@ CValidation.prototype.installQuery = function(){
     }
 };
 
+/**
+ * @memberof CValidation
+ * @method installmaskedinput
+ * @desc install masked input plugin
+ */
 CValidation.prototype.installmaskedinput = function(){
     if(window.jQuery.mask === undefined) {
         //Create a script tag
@@ -610,7 +716,8 @@ CValidation.prototype.installCValidationCss = function() {
         + "\n@-o-keyframes wiggle{0%{-o-transform:skewX(9deg)}10%{-o-transform:skewX(-8deg)}20%{-o-transform:skewX(7deg)}30%{-o-transform:skewX(-6deg)}40%{-o-transform:skewX(5deg)}50%{-o-transform:skewX(-4deg)}60%{-o-transform:skewX(3deg)}70%{-o-transform:skewX(-2deg)}80%{-o-transform:skewX(1deg)}90%{-o-transform:skewX(0deg)}100%{-o-transform:skewX(0deg)}}"
         + "\n@keyframes wiggle{0%{transform:skewX(9deg)}10%{transform:skewX(-8deg)}20%{transform:skewX(7deg)}30%{transform:skewX(-6deg)}40%{transform:skewX(5deg)}50%{transform:skewX(-4deg)}60%{transform:skewX(3deg)}70%{transform:skewX(-2deg)}80%{transform:skewX(1deg)}90%{transform:skewX(0deg)}100%{transform:skewX(0deg)}}"
         + "\n.wiggle{-webkit-animation-name:wiggle;-moz-animation-name:wiggle;-o-animation-name:wiggle;animation-name:wiggle;-webkit-animation-timing-function:ease-in;-moz-animation-timing-function:ease-in;-o-animation-timing-function:ease-in;animation-timing-function:ease-in}.animated.wiggle{-webkit-animation-duration:.75s;-moz-animation-duration:.75s;-o-animation-duration:.75s;animation-duration:.75s}"
-        + "\n.animate0 {-webkit-animation-duration: .8s; -webkit-animation-delay: 0s; -webkit-animation-timing-function: ease; -webkit-animation-fill-mode: both;-moz-animation-duration: .8s; -moz-animation-delay: 0s; -moz-animation-timing-function: ease;-moz-animation-fill-mode: both; -ms-animation-duration: .8s;-ms-animation-delay: 0s; -ms-animation-timing-function: ease; -ms-animation-fill-mode: both;animation-duration: .8s; animation-delay: 0s; animation-timing-function: ease; animation-fill-mode: both;}";
+        + "\n.animate0 {-webkit-animation-duration: .8s; -webkit-animation-delay: 0s; -webkit-animation-timing-function: ease; -webkit-animation-fill-mode: both;-moz-animation-duration: .8s; -moz-animation-delay: 0s; -moz-animation-timing-function: ease;-moz-animation-fill-mode: both; -ms-animation-duration: .8s;-ms-animation-delay: 0s; -ms-animation-timing-function: ease; -ms-animation-fill-mode: both;animation-duration: .8s; animation-delay: 0s; animation-timing-function: ease; animation-fill-mode: both;}"
+        + "\n.CValidationListErrors {border: 1px solid #FF0000;padding: 10px;background: #FFF6F5; border-radius: 10px;}";
     window.document.getElementsByTagName('head')[0].appendChild(CValidationCss);
 }
 
