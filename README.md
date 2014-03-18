@@ -90,6 +90,10 @@ You can use a different effect of the notifications.By default CValidation use '
 
     Available:
         wiggle
+        wobble
+        flash
+        shake
+        bounce
 
 
 
