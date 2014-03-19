@@ -175,9 +175,10 @@ CValidation.prototype.showCustomNotification = function(message,duration) {
  * @returns {boolean}
  */
 CValidation.prototype.submitForm = function(formSelector,ajax) {
-//        if(formSelector === undefined) {
-            window.event.preventDefault();
-//        }
+        //if(formSelector === undefined) {
+              //window.event.preventDefault();
+            //window.event.returnValue=false;
+        //}
         /*
          * if formSelector doesn't exists get selector of form as parent of current submit button
          */
@@ -499,8 +500,8 @@ CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldNa
  * @param fieldName
  */
 CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fieldName) {
-    var regName = /^[a-zа-я0-9_-\s]{3,40}$/gi;
-   if(jQuery.trim(fieldSelector.val()).search(regName) === -1) {
+    var regName = /\!|\*|-|\.|_|\'|\\|\/|\"|\#|\%|\&|\@|\~|:|\^/gi;
+   if(jQuery.trim(fieldSelector.val()).search(regName) !== -1 || jQuery.trim(fieldSelector.val())==='') {
        this.addErrorClass(fieldSelector);
        errors.push({type:this.i18n('header_validname'),message:errorMessage || this.i18n('name',{field:fieldName}),element:fieldSelector});
    }
@@ -645,19 +646,32 @@ CValidation.prototype.installQuery = function(){
         //Set an attribute for it
         jqueryLib.setAttribute('type','text/javascript');
         //Create an ajax request
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-        // Send request
-        request.open('GET', 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js', false);
-        request.send();
-        //Get response
-        var response = request.responseText;
+        var request,response;
+//        if(window.XDomainRequest !== undefined) {
+//            ////cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js
+//            request = new XDomainRequest();
+//            request.contentType = "text/plain";
+//            request.open("GET", "https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js");
+//            request.onload = function() {
+//                response=request.responseText;
+//            };
+//            request.send();
+//
+//        } else {
+            if (window.XMLHttpRequest) {
+                // IE7+, Firefox, Chrome, Opera, Safari
+                request = new XMLHttpRequest();
+            } else {
+                // code for IE6, IE5
+                request = new ActiveXObject('Microsoft.XMLHTTP');
+            }
+            // Send request
+            request.open('GET', 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js', false);
+            request.send();
+
+            //Get response
+             response = request.responseText;
+        //}
         //Set response's body into created script tag
         jqueryLib.innerHTML=response;
         //Insert a script tag in the end of head
