@@ -38,12 +38,16 @@ use class:
 
     <script>
     var validation = new CValidation();
-    var result = validation.submitForm($('#forma'));
+    var result = validation.submitForm('#forma',event);
 
     var enValid = new CValidation('en');
     enValid.setLocale('en');
 
     </script>
+
+OR
+
+    <input type="button" value="Send" onclick="validation.submitForm(this,event);" />
 
 
 
@@ -101,6 +105,38 @@ You can use a different effect of the notifications.By default CValidation use '
             var validation = new CValidation();
             validation.setAnimateEffect('wiggle');
          </script>
+
+
+
+Contributions:
+-------------
+
+
+If you use class via attribute onclick,for example :
+
+                <a href="#" onclick="validation.submitForm(this,event);">Send</a>
+
+Parameters "this" and "event" are required
+
+
+
+If you use custom handler, for example:
+
+                var valid = new CValidation();
+                $('#form1').click(function(event){
+                       valid.submitForm('#ff',event);
+               });
+
+Set first parametes CSS3 selector (parameter must be a string)
+And "event" parameter is required also, but you, if don't want auto submit form
+you will set second parameter to true (boolean), in this case, set event third parameter
+for example:
+
+                var valid = new CValidation();
+                $('#form1').click(function(event){
+                       valid.submitForm('#ff',true,event);
+               });
+
 
 
 Rules:
@@ -197,6 +233,42 @@ Example:
             </p>
             <p>
 
-                <input type="submit" id="form1" name="submit" value="Submit" onclick="validation.submitForm()"/>
+                <input type="submit" id="form1" name="submit" value="Submit" onclick="validation.submitForm(this,event)"/>
             </p>
         </form>
+
+   --------------------
+    <script src="CValidation.js"></script>
+    <script>
+       var valid = new CValidation();
+       valid.setShowType('powerTip');
+       valid.setAnimateEffect('wobble');
+
+       $(document).ready(function(){
+           $('#formask').mask('(999)-99-999');
+           $('#form1').click(function(event){
+               valid.submitForm('#ff',event);
+
+           });
+       });
+    </script>
+
+
+     <form id="ff" action="" method="get" >
+
+
+            <p>
+                <label>Your age</label>
+                <input type="number" data-cvalidation="toBeInt" name="mynumber" />
+            </p>
+
+            <p>
+                <label>Your phonenumber</label>
+                <input type="text" id="formask" name="mynumber" />
+            </p>
+
+            <p>
+
+                <input type="button" id="form1" name="submit" value="Submit" />
+            </p>
+    </form>

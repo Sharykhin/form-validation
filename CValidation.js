@@ -175,14 +175,21 @@ CValidation.prototype.showCustomNotification = function(message,duration) {
  * @returns {boolean}
  */
 CValidation.prototype.submitForm = function(formSelector,ajax) {
-        //if(formSelector === undefined) {
-              //window.event.preventDefault();
-            //window.event.returnValue=false;
-        //}
+        //Prevend Default action in cross browsers
+        if(typeof arguments[1] === 'object') {
+            var eventObj = arguments[1];
+            eventObj.preventDefault();
+        }
+        if(arguments[2] !== undefined && typeof arguments[2] === 'object') {
+            var eventObj = arguments[2];
+            eventObj.preventDefault();
+        }
+        var typeOfFirstArgs =  typeof arguments[0];
         /*
          * if formSelector doesn't exists get selector of form as parent of current submit button
          */
-        var formSelector = formSelector || jQuery(window.event.target).parents('form');
+        var formSelector = (typeof formSelector === 'string') ? jQuery(formSelector) : jQuery(arguments[0]).parents('form');
+
         //Get All form elements
         var formElements = formSelector.find('input,textarea,select').not('button[type=submit],input[type=submit]');
         //Initialize error array
@@ -206,7 +213,6 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
                 jQuery(this).remove();
             });
         }
-
 
         //Walk on each element
         formElements.each(function(){
@@ -245,8 +251,8 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
                }
            }
         });
+
        //If the errors exist, show notification messages
-        console.log(errors.length);
        if(errors.length > 0) {
 
            this['show_'+this.showType+'_Notification'](errors,formSelector);
@@ -254,12 +260,28 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
        }
 
         if(ajax !== true) {
+
             formSelector.find('input[type=submit],button[type=submit]').off('click');
             formSelector.off('submit');
+            //If form doesn't contain button with submit type
             if(formSelector.find('input[type=submit],button[type=submit]').length === 0) {
-                formSelector.submit();
+                //Check if method is called via onclick attribute
+                formSelector.find('[onclick*="submitForm"]').removeAttr('onclick');
+                //Create submit button, insert it into form and immediately imitate click
+                jQuery('<input type="submit" />').appendTo(formSelector).click();
+
             } else {
-                formSelector.find('input[type=submit],button[type=submit]').click();
+                //Chech if method is called via onclick attribute
+                if(typeOfFirstArgs === 'object') {
+                    formSelector.find('[onclick*="submitForm"]').removeAttr('onclick');
+                    formSelector.find('input[type=submit],button[type=submit]').click();
+                }
+                //Of submit from call via custom handler, so we need in short timeout to send form
+                if(typeOfFirstArgs === 'string') {
+                   setTimeout(function(){
+                       formSelector.find('input[type=submit],button[type=submit]').click();
+                   },100);
+                }
             }
 
         } else {
