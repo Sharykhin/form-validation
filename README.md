@@ -108,6 +108,16 @@ You can use a different effect of the notifications.By default CValidation use '
 
 
 
+Use method ready for custom handle, when all required plugins will be installed, code, which you will
+pass in ready function as argument will be called
+
+
+        var valid = new CValidation();
+        valid.ready(function(){
+            //Your code here
+        });
+
+
 Contributions:
 -------------
 
@@ -123,9 +133,13 @@ Parameters "this" and "event" are required
 If you use custom handler, for example:
 
                 var valid = new CValidation();
-                $('#form1').click(function(event){
-                       valid.submitForm('#ff',event);
-               });
+                valid.ready(function(){
+                        $('#form1').click(function(event){
+                                       valid.submitForm('#ff',event);
+                           });
+                });
+
+
 
 Set first parametes CSS3 selector (parameter must be a string)
 And "event" parameter is required also, but you, if don't want auto submit form
@@ -133,9 +147,13 @@ you will set second parameter to true (boolean), in this case, set event third p
 for example:
 
                 var valid = new CValidation();
+                valid.ready(function(){
                 $('#form1').click(function(event){
-                       valid.submitForm('#ff',true,event);
-               });
+                                       valid.submitForm('#ff',true,event);
+                               });
+                });
+
+
 
 
 
@@ -243,14 +261,13 @@ Example:
        var valid = new CValidation();
        valid.setShowType('powerTip');
        valid.setAnimateEffect('wobble');
+       valid.ready(function(){
+          $('#formask').mask('(999)-99-999');
+          $('#form1').click(function(event){
+              valid.submitForm('#ff',event);
 
-       $(document).ready(function(){
-           $('#formask').mask('(999)-99-999');
-           $('#form1').click(function(event){
-               valid.submitForm('#ff',event);
+          }););
 
-           });
-       });
     </script>
 
 

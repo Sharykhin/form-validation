@@ -3,6 +3,7 @@
  * @namespace CValidation
  * @desc A class checks data of the form and show notification messages
  * @param locale current language
+ * @param {string} showType which type of error notification will be used
  * @constructor
  */
 var CValidation = function(locale,showType){
@@ -158,13 +159,28 @@ CValidation.prototype.createMessage = function(msg,params) {
  */
 CValidation.prototype.showCustomNotification = function(message,duration) {
   var duration = parseInt(duration,10) || 4000;
-  jQuery('<div />').addClass('CValidation-cutom-notification').css({'width':'200px','position':'fixed','left':'50%','marginLeft':'-100px','zIndex':'9999','top':'40%','background':'rgba(255,107,110,0.8)','color':'#ffffff','padding':'20px','borderRadius':'10px'}).text(message).fadeIn().appendTo('body');
+  jQuery('<div />').addClass('CValidation-cutom-notification').css({'width':'200px','position':'fixed','left':'50%','marginLeft':'-100px','zIndex':'999999999','top':'40%','background':'rgba(255,107,110,0.8)','color':'#ffffff','padding':'20px','borderRadius':'10px'}).text(message).fadeIn().appendTo('body');
     setTimeout(function(){
         jQuery('div.CValidation-cutom-notification').fadeOut(function(){
             jQuery(this).remove();
         });
     },duration);
 
+};
+
+/**
+ * @memberof CValidation
+ * @method ready
+ * @desc it is ready method, where you must placed custom code. It will be called, when all plugins will be installed
+ * @param {function} callback
+ */
+CValidation.prototype.ready = function(callback) {
+    var jQueryInstalled = setInterval(function(){
+        if(window.jQuery !== undefined && jQuery.mask !== undefined) {
+            clearInterval(jQueryInstalled);
+            (function($){$(document).ready(callback)})(jQuery);
+        }
+    },100);
 };
 
 /**
@@ -300,9 +316,9 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
  * @param {object} errors
  */
 CValidation.prototype.show_jGrowl_Notification = function(errors) {
-    jQuery.jGrowl.defaults.closerTemplate = "<div>[ "+this.i18n('close_all')+" ]</div>";
+
     for(var i= 0,len=errors.length;i<len;i++){
-        jQuery.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000});
+        $.jGrowl(errors[i].message,{header:errors[i].type,themeState:'error',life:5000,closerTemplate:"<div>[ "+this.i18n('close_all')+" ]</div>"});
     }
 };
 
@@ -321,7 +337,7 @@ CValidation.prototype.show_powerTip_Notification = function(errors) {
         }
         errors[i].element.powerTip({manual:false,smartPlacement:true});
         errors[i].element.focus(function(){
-            jQuery(this).powerTip('hide');
+            $(this).powerTip('hide');
         });
     }
 };
@@ -351,7 +367,7 @@ CValidation.prototype.show_listError_Notification = function(errors,formSelector
 
     formSelector.append("<div style='display: none' class='CValidationListErrors' />")
     for(var i= 0,len=errors.length;i<len;i++){
-        jQuery("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>").appendTo('.CValidationListErrors');
+        $("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>").appendTo('.CValidationListErrors');
     }
     formSelector.find('.CValidationListErrors').slideDown();
 
@@ -537,54 +553,31 @@ CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fie
  */
 CValidation.prototype.installjGrowl=function() {
 
-    //Next check if jGrowl already exists
-    if(window.jQuery.jGrowl === undefined) {
 
-        var  jGrowlLib = window.document.createElement('script');
+    var jqueryInstalled = setInterval(function(){
+        if(window.jQuery !== undefined) {
+            clearInterval(jqueryInstalled);
+            if(window.jQuery.jGrowl === undefined) {
 
-        jGrowlLib.setAttribute('type','text/javascript');
-//        jGrowlLib.setAttribute('src', '//cdnjs.cloudflare.com/ajax/libs/jquery-jgrowl/1.2.12/jquery.jgrowl.js');
+                /**TEST*/
+                var jGrowlJs = document.createElement('script');
+                jGrowlJs.type = 'text/javascript';
+                jGrowlJs.async = true;
+                jGrowlJs.src = '//cdnjs.cloudflare.com/ajax/libs/jquery-jgrowl/1.2.12/jquery.jgrowl.min.js';
+                document.getElementsByTagName('head')[0].appendChild(jGrowlJs);
 
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
+                var jGrowlCss = document.createElement('link');
+                jGrowlCss.type = 'text/css';
+                jGrowlCss.rel = 'stylesheet';
+                jGrowlCss.async = true;
+                jGrowlCss.href = '//cdnjs.cloudflare.com/ajax/libs/jquery-jgrowl/1.2.12/jquery.jgrowl.min.css';
+                document.getElementsByTagName('head')[0].appendChild(jGrowlCss);
+                //var css = document.getElementsByTagName('link')[0]; s.parentNode.insertBefore(jGrowlCss, css);
+
+                /**END TEST*/
+            }
         }
-        // load
-        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery-jgrowl/1.2.12/jquery.jgrowl.min.js', false);
-        request.send();
-        var response = request.responseText;
-        jGrowlLib.innerHTML=response;
-        window.document.getElementsByTagName('head')[0].appendChild(jGrowlLib);
-
-        //jGrowlLib.setAttribute('type','text/javascript');
-
-        var  jGrowlLibCss = window.document.createElement('style');
-        jGrowlLibCss.setAttribute('type','text/css');
-
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-        // load
-        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery-jgrowl/1.2.12/jquery.jgrowl.min.css', false);
-        request.send();
-        var response = request.responseText;
-        jGrowlLibCss.innerHTML=response
-            + "\ndiv.jGrowl .ui-state-error,div.jGrowl .error {background:#CE0A0A !important}"
-            + "\ndiv.jGrowl .jGrowl-message,div.jGrowl .jGrowl-close,div.jGrowl .jGrowl-header {color:#ffffff !important}"
-            + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background:#2F8F2B !important}"
-            + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background:#2AB8FF !important}";
-        window.document.getElementsByTagName('head')[0].appendChild(jGrowlLibCss);
-
-    }
+    },10);
 
 };
 
@@ -594,51 +587,31 @@ CValidation.prototype.installjGrowl=function() {
  * @desc Install powerTip library from cdnjs. Version is 1.2.0
  */
 CValidation.prototype.installpowerTip = function() {
-    //Check if powerTip already exists
-    if(window.jQuery.powerTip === undefined) {
-        //Create a script tag
-        var  powerTip = window.document.createElement('script');
-        //Set an attribute for it
-        powerTip.setAttribute('type','text/javascript');
-        //Create an ajax request
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
+    //powerTip requires jQuery, so first, let's install jquery if it doesn't exist
+    var jqueryInstalled = setInterval(function(){
+        if(window.jQuery !== undefined) {
+            clearInterval(jqueryInstalled);
+            if(window.jQuery.powerTip === undefined) {
+
+                var powertipJs = document.createElement('script');
+                powertipJs.type = 'text/javascript';
+                powertipJs.async = true;
+                powertipJs.src = '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.min.js';
+                document.getElementsByTagName('head')[0].appendChild(powertipJs);
+
+                var powertipCss = document.createElement('link');
+                powertipCss.type = 'text/css';
+                powertipCss.rel = 'stylesheet';
+                powertipCss.async = true;
+                powertipCss.href = '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/css/jquery.powertip-red.css';
+                document.getElementsByTagName('head')[0].appendChild(powertipCss);
+                //var css = document.getElementsByTagName('link')[0]; s.parentNode.insertBefore(powertipCss, css);
+
+
+
+            }
         }
-        // Send request
-        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/jquery.powertip.js', false);
-        request.send();
-        //Get response
-        var response = request.responseText;
-        //Set response's body into created script tag
-        powerTip.innerHTML=response;
-        window.document.getElementsByTagName('head')[0].appendChild(powerTip);
-
-
-        var  powerTipCss = window.document.createElement('style');
-        powerTipCss.setAttribute('type','text/css');
-
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-        // load
-        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery-powertip/1.2.0/css/jquery.powertip-red.css', false);
-        request.send();
-        var response = request.responseText;
-        powerTipCss.innerHTML=response;
-        window.document.getElementsByTagName('head')[0].appendChild(powerTipCss);
-
-    }
-
+    },10);
 };
 
 /**
@@ -663,42 +636,13 @@ CValidation.prototype.installlistError = function() {
 CValidation.prototype.installQuery = function(){
     //First check if jQuery exists
     if(window.jQuery === undefined) {
-        //Create a script tag
-        var jqueryLib = window.document.createElement('script');
-        //Set an attribute for it
-        jqueryLib.setAttribute('type','text/javascript');
-        //Create an ajax request
-        var request,response;
-//        if(window.XDomainRequest !== undefined) {
-//            ////cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js
-//            request = new XDomainRequest();
-//            request.contentType = "text/plain";
-//            request.open("GET", "https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js");
-//            request.onload = function() {
-//                response=request.responseText;
-//            };
-//            request.send();
-//
-//        } else {
-            if (window.XMLHttpRequest) {
-                // IE7+, Firefox, Chrome, Opera, Safari
-                request = new XMLHttpRequest();
-            } else {
-                // code for IE6, IE5
-                request = new ActiveXObject('Microsoft.XMLHTTP');
-            }
-            // Send request
-            request.open('GET', 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js', false);
-            request.send();
-
-            //Get response
-             response = request.responseText;
-        //}
-        //Set response's body into created script tag
-        jqueryLib.innerHTML=response;
-        //Insert a script tag in the end of head
-        window.document.getElementsByTagName('head')[0].appendChild(jqueryLib);
+            var jQueryJs = document.createElement('script');
+            jQueryJs.type = 'text/javascript';
+            jQueryJs.async = true;
+            jQueryJs.src = 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js';
+            document.getElementsByTagName('head')[0].appendChild(jQueryJs);
     }
+
 };
 
 /**
@@ -707,40 +651,26 @@ CValidation.prototype.installQuery = function(){
  * @desc install masked input plugin
  */
 CValidation.prototype.installmaskedinput = function(){
-    if(window.jQuery.mask === undefined) {
-        //Create a script tag
-        var maskedinput = window.document.createElement('script');
-        //Set an attribute for it
-        maskedinput.setAttribute('type','text/javascript');
-        //Create an ajax request
-        var request;
-        if (window.XMLHttpRequest) {
-            // IE7+, Firefox, Chrome, Opera, Safari
-            request = new XMLHttpRequest();
-        } else {
-            // code for IE6, IE5
-            request = new ActiveXObject('Microsoft.XMLHTTP');
+    //maskInput requires jQuery, so let't first be sure, that jquery already installed
+    var jqueryInstalled = setInterval(function(){
+        //If jquery installed successfullt, install maskInput
+        if(window.jQuery !== undefined) {
+            clearInterval(jqueryInstalled);
+            if(window.jQuery.mask === undefined) {
+                var maskInputJs = document.createElement('script');
+                maskInputJs.type = 'text/javascript';
+                maskInputJs.async = true;
+                maskInputJs.src = '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.3.1/jquery.maskedinput.min.js';
+                document.getElementsByTagName('head')[0].appendChild(maskInputJs);
+            }
         }
-        // Send request
-        request.open('GET', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.3.1/jquery.maskedinput.min.js', false);
-        request.send();
-        //Get response
-        var response = request.responseText;
-        //Set response's body into created script tag
-        maskedinput.innerHTML=response;
-        //Insert a script tag in the end of head
-        window.document.getElementsByTagName('head')[0].appendChild(maskedinput);
-//        (function() {
-//            var masked = document.createElement('script'); masked.type = 'text/javascript'; masked.async = true;
-//            masked.src = '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.3.1/jquery.maskedinput.min.js';
-//            //var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(masked, s);
-//            window.document.getElementsByTagName('head')[0].appendChild(masked);
-//        })();
-
-
-    }
+    },10);
 };
 
+CValidation.prototype.isIE = function() {
+    var myNav = navigator.userAgent.toLowerCase();
+    return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
+};
 
 /**
  * @memberof CValidation
@@ -750,7 +680,8 @@ CValidation.prototype.installmaskedinput = function(){
 CValidation.prototype.installCValidationCss = function() {
     var  CValidationCss = window.document.createElement('style');
     CValidationCss.setAttribute('type','text/css');
-    CValidationCss.innerHTML="\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
+
+    var customCss = "\n.cvalidation-error  {border:1px solid #FF0000 !important;background-color: #FFF6F5 !important;}"
         + "\ndiv.jGrowl div.jGrowl-closer  {background-color:#CE0A0A !important;color:#ffffff !important}"
         + "\n@-webkit-keyframes wiggle{0%{-webkit-transform:skewX(9deg)}10%{-webkit-transform:skewX(-8deg)}20%{-webkit-transform:skewX(7deg)}30%{-webkit-transform:skewX(-6deg)}40%{-webkit-transform:skewX(5deg)}50%{-webkit-transform:skewX(-4deg)}60%{-webkit-transform:skewX(3deg)}70%{-webkit-transform:skewX(-2deg)}80%{-webkit-transform:skewX(1deg)}90%{-webkit-transform:skewX(0deg)}100%{-webkit-transform:skewX(0deg)}}"
         + "\n@-moz-keyframes wiggle{0%{-moz-transform:skewX(9deg)}10%{-moz-transform:skewX(-8deg)}20%{-moz-transform:skewX(7deg)}30%{-moz-transform:skewX(-6deg)}40%{-moz-transform:skewX(5deg)}50%{-moz-transform:skewX(-4deg)}60%{-moz-transform:skewX(3deg)}70%{-moz-transform:skewX(-2deg)}80%{-moz-transform:skewX(1deg)}90%{-moz-transform:skewX(0deg)}100%{-moz-transform:skewX(0deg)}}"
@@ -783,9 +714,27 @@ CValidation.prototype.installCValidationCss = function() {
         + "\n@-moz-keyframes bounce{0%,20%,50%,80%,100%{-moz-transform:translateY(0)}40%{-moz-transform:translateY(-30px)}60%{-moz-transform:translateY(-15px)}}"
         + "\n@-o-keyframes bounce{0%,20%,50%,80%,100%{-o-transform:translateY(0)}40%{-o-transform:translateY(-30px)}60%{-o-transform:translateY(-15px)}}"
         + "\n@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-30px)}60%{transform:translateY(-15px)}}"
-        + "\n.bounce{-webkit-animation-name:bounce;-moz-animation-name:bounce;-o-animation-name:bounce;animation-name:bounce}";
-    window.document.getElementsByTagName('head')[0].appendChild(CValidationCss);
-}
+        + "\n.bounce{-webkit-animation-name:bounce;-moz-animation-name:bounce;-o-animation-name:bounce;animation-name:bounce}"
+        + "\ndiv.jGrowl .ui-state-error,div.jGrowl .error {background:#CE0A0A !important}"
+        + "\ndiv.jGrowl .jGrowl-message,div.jGrowl .jGrowl-close,div.jGrowl .jGrowl-header {color:#ffffff !important}"
+        + "\ndiv.jGrowl .ui-state-success,div.jGrowl .success {background:#2F8F2B !important}"
+        + "\ndiv.jGrowl .ui-state-notify,div.jGrowl .notify {background:#2AB8FF !important}"
+        + "\n#jGrowl  {z-index:99999999999}";
+
+    if (this.isIE() == 8 || this.isIE()==7) {
+       var jqeuryInstalled = setInterval(function(){
+           if(window.jQuery !== undefined && jQuery('head') !== undefined) {
+               clearInterval(jqeuryInstalled);
+               jQuery('<div />').html('<style type="text/css">'+customCss+'</style>').appendTo('head');
+           }
+       },10)
+
+    } else {
+        CValidationCss.innerHTML=customCss;
+        window.document.getElementsByTagName('head')[0].appendChild(CValidationCss);
+    }
+
+};
 
 /**
  * @memberof CValidation
