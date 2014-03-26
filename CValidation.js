@@ -223,7 +223,7 @@ CValidation.prototype.submitForm = function(formSelector,ajax) {
             });
         }
         formSelector.find('.CValidation-textError').remove();
-
+        console.log(formSelector);
         if( formSelector.find('.CValidationListErrors').length > 0) {
             formSelector.find('.CValidationListErrors').slideUp(function(){
                 jQuery(this).remove();
@@ -365,9 +365,10 @@ CValidation.prototype.show_textError_Notification = function(errors) {
  */
 CValidation.prototype.show_listError_Notification = function(errors,formSelector) {
 
-    formSelector.append("<div style='display: none' class='CValidationListErrors' />")
+    formSelector.append("<div style='display: none' class='CValidationListErrors' />");
+    var currentListError = formSelector.find('.CValidationListErrors');
     for(var i= 0,len=errors.length;i<len;i++){
-        $("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>").appendTo('.CValidationListErrors');
+        $("<p class='CValidation-textError' style='color:#FF0000;clear:both'>"+errors[i].message+"</p>").appendTo(currentListError);
     }
     formSelector.find('.CValidationListErrors').slideDown();
 
