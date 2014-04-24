@@ -17,7 +17,7 @@ Set necessary attribute in field
 
     data-cvalidation="equal=confirm_password" (name attribute of filed)
 
-    data-cvalidation="notBe(0,abc)"
+    data-cvalidation="notToBe(0,abc)"
 
      data-cvalidation="toBeInt"
 
@@ -180,7 +180,7 @@ Value of the field must have valid name (For examle: John, McGonnary)
 
 Value of the field is equal value of the second field
 
-    data-cvalidation="notBe(0,abc)"
+    data-cvalidation="notToBe(0,abc)"
 
 Value of the field can not be equal values in brackets
 
