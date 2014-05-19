@@ -423,7 +423,7 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
  */
 CValidation.prototype.toBeInt = function(fieldSelector,errors,errorMessage,fieldName) {
     var fieldValue = jQuery.trim(fieldSelector.val());
-    if(fieldValue.search(/[0-9].*/)===-1) {
+    if(fieldValue.search(/^([0-9])*$/)===-1) {
         this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_attention'),message:errorMessage || this.i18n('toBeInt',{field:fieldName}),element:fieldSelector});
     }
