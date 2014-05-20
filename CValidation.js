@@ -523,6 +523,9 @@ CValidation.prototype.addErrorClass = function(fieldSelector) {
  */
 CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldName) {
     var regEmail = /^[a-z0-9_\.-]{1,20}@[a-z0-9_-]{1,20}\.[a-z0-9]{2,3}$/gi;
+     if(jQuery.trim(fieldSelector.val())==='') {
+        return true;
+      }
     if(jQuery.trim(fieldSelector.val()).search(regEmail) === -1) {
         this.addErrorClass(fieldSelector);
         errors.push({type:this.i18n('header_email'),message:errorMessage || this.i18n('email'),element:fieldSelector});
