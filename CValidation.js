@@ -543,7 +543,10 @@ CValidation.prototype.email = function(fieldSelector,errors,errorMessage,fieldNa
  */
 CValidation.prototype.validname = function(fieldSelector,errors,errorMessage,fieldName) {
     var regName = /\!|\*|-|\.|_|\'|\\|\/|\"|\#|\%|\&|\@|\~|:|\^/gi;
-   if(jQuery.trim(fieldSelector.val()).search(regName) !== -1 || jQuery.trim(fieldSelector.val())==='') {
+    if(jQuery.trim(fieldSelector.val())==='') {
+        return true;
+    }
+   if(jQuery.trim(fieldSelector.val()).search(regName) !== -1 ) {
        this.addErrorClass(fieldSelector);
        errors.push({type:this.i18n('header_validname'),message:errorMessage || this.i18n('name',{field:fieldName}),element:fieldSelector});
    }
