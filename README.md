@@ -266,7 +266,8 @@ Example:
           $('#form1').click(function(event){
               valid.submitForm('#ff',event);
 
-          }););
+          });
+          });
 
     </script>
 
