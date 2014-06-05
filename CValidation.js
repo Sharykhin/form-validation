@@ -402,11 +402,11 @@ CValidation.prototype.validLength = function(fieldSelector,errors,rule,errorMess
 
     if(valueLength < minValue && minValue !== null) {
         this.addErrorClass(fieldSelector);
-        errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_min',{field:fieldName,num:minValue})});
+        errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_min',{field:fieldName,num:minValue}),element:fieldSelector});
     }
     if(valueLength > maxValue && maxValue !== null) {
         this.addErrorClass(fieldSelector);
-        errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_max',{field:fieldName,num:maxValue})});
+        errors.push({type:this.i18n('header_length'),message:errorMessage || this.i18n('length_max',{field:fieldName,num:maxValue}),element:fieldSelector});
     }
 
 };
