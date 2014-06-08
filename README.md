@@ -3,7 +3,7 @@ Validation class, which checks your form
 Usage:
 ------
 
-Set necessary attribute in field
+Set a necessary attribute in field
 
     data-cvalidation="required"
 
@@ -22,19 +22,19 @@ Set necessary attribute in field
      data-cvalidation="toBeInt"
 
 
-you can use all this rules in mixed
+you can use all these rules mixed
 
     data-cvalidation="required 20<length<6 validname"
 
-custom error message:
+custom's error message:
 
     data-cvalidation-message="Your password doesn't match wich confirm password"
 
-custom field name:
+custom's field name:
 
     data-cvalidation-fieldname="My Field"
 
-use class:
+The use of the class:
 
     <script>
     var validation = new CValidation();
@@ -51,9 +51,9 @@ OR
 
 
 
-Also plugin use masked input: http://digitalbush.com/projects/masked-input-plugin.
+Also the class uses masked input: http://digitalbush.com/projects/masked-input-plugin.
 
- use it:
+Its use:
 
        $("#date").mask("99/99/9999");
        $("#phone").mask("(999) 999-9999");
@@ -64,7 +64,7 @@ Also plugin use masked input: http://digitalbush.com/projects/masked-input-plugi
 Options:
 --------
 
-You can use different notifications. By default CValidation use jGrowl, but you can choose another:
+You can use different notifications. By default CValidation uses jGrowl, but you can choose another:
 
     Available:
         jGrowl
@@ -72,14 +72,14 @@ You can use different notifications. By default CValidation use jGrowl, but you 
         textError
         listError
 
-First variant:
+The first variant:
 
      <script>
         var validation = new CValidation('en','powerTip');
         var validation = new CValidation('en','textError');
      </script>
 
-Second variant:
+The second variant:
 
      <script>
         var validation = new CValidation();
@@ -90,7 +90,7 @@ Second variant:
 
 
 
-You can use a different effect of the notifications.By default CValidation use 'wiggle'
+You can use different effects of the notifications. By default CValidation uses 'wiggle'
 
     Available:
         wiggle
@@ -108,7 +108,7 @@ You can use a different effect of the notifications.By default CValidation use '
 
 
 
-Use method ready for custom handle, when all required plugins will be installed, code, which you will
+Use method ready for custom handle, when all required plugins are installed, code, which you will
 pass in ready function as argument will be called
 
 
@@ -122,7 +122,7 @@ Contributions:
 -------------
 
 
-If you use class via attribute onclick,for example :
+If you use the class via the attribute onclick, for example :
 
                 <a href="#" onclick="validation.submitForm(this,event);">Send</a>
 
@@ -142,8 +142,8 @@ If you use custom handler, for example:
 
 
 Set first parametes CSS3 selector (parameter must be a string)
-And "event" parameter is required also, but you, if don't want auto submit form
-you will set second parameter to true (boolean), in this case, set event third parameter
+And "event" parameter is required also, but if you don't want auto submit form
+you should set the second parameter to true (boolean), in this case, set event third parameter
 for example:
 
                 var valid = new CValidation();
