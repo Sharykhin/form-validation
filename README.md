@@ -191,16 +191,16 @@ Value of the filed must be integer
 Important
 ---------
 
-Main method submitForm has second parameter, by default it is undefined
-and when all data of form will be have valid values, method automatically remove all listeners from form
-and imitate click on submit, but if you pass second parameter to `true`, method return true
+The main method submitForm has the second parameter, by default it is undefined
+and when all data of form have valid values, the method will automatically remove all listeners from the form
+and imitate a click on submit, but if you pass the second parameter to `true`, method will return true
 if all data are valid
 
 
 I18n:
 -----
 
-Class use object i18nMessages, where situated all translations
+The class uses object i18nMessages, where all translations are situated
 
         i18nMessages = {
             en:{
@@ -208,7 +208,7 @@ Class use object i18nMessages, where situated all translations
             }
         }
 
-You can change any message or add new language
+You can change any message or add a new language
 
         <script>
             var validation = new CValidation();
